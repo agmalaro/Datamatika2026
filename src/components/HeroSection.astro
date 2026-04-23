@@ -4,7 +4,8 @@ import datamatikaWordmark from "../assets/logos/datamatika-nav-logo.png";
 
 const { siteMeta } = getSiteData();
 const { eventStartsAt, eventDateLabel } = siteMeta;
-const heroLogoStyle: "glass" | "plain" = "plain";
+/** "glass" = panel frosted putih di belakang wordmark (PNG transparan tetap terbaca di atas foto). "plain" = tanpa panel (logo langsung transparan di hero). */
+const heroLogoStyle: "glass" | "plain" = "glass";
 const heroBackground = siteMeta.heroBg || images.heroBg;
 const heroLogo = siteMeta.heroLogo || datamatikaWordmark.src;
 ---

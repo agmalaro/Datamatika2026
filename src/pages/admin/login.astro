@@ -43,7 +43,10 @@ if (isAuthenticated(Astro.cookies)) {
         </label>
         <p class="error" id="error-text"></p>
         <button type="submit">Masuk</button>
-        <p class="hint">Default lokal: <code>user: admin </code>. Password Tanya Admin.</p>
+        <p class="hint">
+          Produksi (Netlify): atur <code>ADMIN_PASSWORD</code> &amp; <code>ADMIN_SESSION_SECRET</code> di Environment variables.
+          Lokal tanpa env: user <code>admin</code>, password default sesuai <code>admin-auth</code> / admin.
+        </p>
       </form>
     </main>
 

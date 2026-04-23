@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { isAuthenticated } from "../../../lib/admin-auth";
 
 export const prerender = false;
+const isReadonlyHosting = Boolean(import.meta.env.NETLIFY) || import.meta.env.VERCEL === "1";
 
 const ALLOWED_MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -36,6 +37,12 @@ function templateExtFromName(name: string): string {
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   if (!isAuthenticated(cookies)) return badRequest("Unauthorized", 401);
+  if (isReadonlyHosting) {
+    return badRequest(
+      "Upload nonaktif di production Netlify/Vercel tanpa storage eksternal (filesystem read-only).",
+      503,
+    );
+  }
 
   const formData = await request.formData();
   const uploadType = typeof formData.get("uploadType") === "string" ? String(formData.get("uploadType")) : "";

@@ -55,7 +55,11 @@ function ensureLocalAuth(username: string): { username: string; passwordHash: st
   const existing = readLocalAuth();
   if (existing) return existing;
   const created = { username, passwordHash: hashPassword("admindatamatika1p8") };
-  saveLocalAuth(created.username, created.passwordHash);
+  try {
+    saveLocalAuth(created.username, created.passwordHash);
+  } catch {
+    // Netlify/serverless: repo FS is read-only — login still works per cold start; set ADMIN_PASSWORD in env for production.
+  }
   return created;
 }
 
@@ -130,6 +134,13 @@ export function changePassword(currentPassword: string, nextPassword: string): {
     return { ok: false, message: "Password baru minimal 8 karakter." };
   }
 
-  saveLocalAuth(local.username, hashPassword(nextPassword));
+  try {
+    saveLocalAuth(local.username, hashPassword(nextPassword));
+  } catch {
+    return {
+      ok: false,
+      message: "Tidak bisa menyimpan password (filesystem read-only). Atur ADMIN_PASSWORD di Netlify / hosting.",
+    };
+  }
   return { ok: true, message: "Password admin berhasil diperbarui." };
 }

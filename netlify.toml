@@ -1,0 +1,8 @@
+# Astro + @astrojs/netlify: static assets live under dist/; the adapter wires SSR to a Netlify Function.
+# Official deploy guide still uses publish = "dist" (do not remove unless Netlify docs for your adapter version say otherwise).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
