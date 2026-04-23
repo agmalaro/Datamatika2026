@@ -1,0 +1,37 @@
+---
+import { getSiteData, images } from "../data/site";
+
+const { timeline, media } = getSiteData();
+---
+
+<section
+  id="timeline"
+  class="section section--timeline"
+  style={`--section-bg: url('${images.timelineBg}')`}
+>
+  <div class="section__bg" aria-hidden="true"></div>
+  <div class="wrap timeline">
+    <div class="timeline__copy reveal">
+      <h2 class="heading-accent heading-accent--lg">Timeline</h2>
+      <ol class="timeline-steps">
+        {
+          timeline.map((item) => (
+            <li>
+              <strong>{item.date}</strong>
+              {item.label}
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <div class="timeline__media reveal">
+      <img
+        src={media.timelinePhoto}
+        alt="Grafis informasi timeline seminar"
+        width="700"
+        height="900"
+        loading="lazy"
+      />
+    </div>
+  </div>
+</section>

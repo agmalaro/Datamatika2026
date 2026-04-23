@@ -1,0 +1,78 @@
+---
+import { images } from "../data/site";
+
+const isHome = Astro.url.pathname === "/";
+const isGallery = Astro.url.pathname === "/galeri";
+const isMaps = Astro.url.pathname === "/maps";
+const isPanduan = Astro.url.pathname === "/panduan";
+const isAgenda = Astro.url.pathname === "/agenda";
+const homeHref = (hash: string) => (isHome ? hash : `/${hash}`);
+---
+
+<a class="skip-link" href="#main">Langsung ke konten</a>
+
+<header class="site-header" id="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href={homeHref("#beranda")} aria-label="Beranda — DATAMATIKA 2026">
+      <img
+        class="brand__mark"
+        src={images.logo}
+        alt=""
+        width="1011"
+        height="141"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      />
+    </a>
+
+    <nav class="site-nav" aria-label="Utama">
+      <a class:list={["site-nav__link", isHome && "site-nav__link--active"]} href={homeHref("#beranda")} data-nav="beranda"
+        >Home</a
+      >
+      <a class="site-nav__link" href={homeHref("#about")} data-nav="about">Tentang</a>
+      <a class="site-nav__link" href={homeHref("#timeline")} data-nav="timeline">Timeline</a>
+      <a class="site-nav__link" href={homeHref("#speakers")} data-nav="speakers">Pembicara</a>
+      <a class="site-nav__link" href={homeHref("#upload")} data-nav="upload">Unggah File</a>
+      <a class="site-nav__link" href={homeHref("#contact")} data-nav="contact">Kontak</a>
+      <span class="site-nav__divider" aria-hidden="true"></span>
+      <a class:list={["site-nav__link", isAgenda && "site-nav__link--active"]} href="/agenda">Agenda</a>
+      <a class:list={["site-nav__link", isMaps && "site-nav__link--active"]} href="/maps">Maps</a>
+      <a class:list={["site-nav__link", isGallery && "site-nav__link--active"]} href="/galeri">Galeri</a>
+      <a class:list={["site-nav__link", isPanduan && "site-nav__link--active"]} href="/panduan">Panduan</a>
+    </nav>
+
+    <button
+      type="button"
+      class="nav-toggle"
+      id="nav-toggle"
+      aria-expanded="false"
+      aria-controls="nav-drawer"
+      aria-label="Buka menu"
+    >
+      <span class="nav-toggle__bars" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    </button>
+  </div>
+
+  <div class="nav-backdrop" id="nav-backdrop" aria-hidden="true"></div>
+
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Menu mobile">
+    <a class:list={["nav-drawer__link", isHome && "nav-drawer__link--active"]} href={homeHref("#beranda")} data-nav="beranda"
+      >Home</a
+    >
+    <a class="nav-drawer__link" href={homeHref("#about")} data-nav="about">Tentang</a>
+    <a class="nav-drawer__link" href={homeHref("#timeline")} data-nav="timeline">Timeline</a>
+    <a class="nav-drawer__link" href={homeHref("#speakers")} data-nav="speakers">Pembicara</a>
+    <a class="nav-drawer__link" href={homeHref("#upload")} data-nav="upload">Unggah File</a>
+    <a class="nav-drawer__link" href={homeHref("#contact")} data-nav="contact">Kontak</a>
+    <div class="nav-drawer__divider" role="separator" aria-hidden="true"></div>
+    <a class:list={["nav-drawer__link", isAgenda && "nav-drawer__link--active"]} href="/agenda">Agenda</a>
+    <a class:list={["nav-drawer__link", isMaps && "nav-drawer__link--active"]} href="/maps">Maps</a>
+    <a class:list={["nav-drawer__link", isGallery && "nav-drawer__link--active"]} href="/galeri">Galeri</a>
+    <a class:list={["nav-drawer__link", isPanduan && "nav-drawer__link--active"]} href="/panduan">Panduan</a>
+  </nav>
+</header>

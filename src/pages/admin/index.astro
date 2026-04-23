@@ -1,0 +1,1330 @@
+---
+import { getSiteContent } from "../../lib/content-store";
+import { isAuthenticated } from "../../lib/admin-auth";
+import { LANDING_SECTION_HASHES, SECONDARY_URL_OPTIONS, normalizeSectionHashForSecondaryUrl } from "../../lib/section-anchors";
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect("/admin/login");
+}
+
+const content = getSiteContent();
+const uploadNoteSecondaryUrl = normalizeSectionHashForSecondaryUrl(
+  content.uploadNote.secondaryUrl,
+  LANDING_SECTION_HASHES[0].value
+);
+const isKnownUploadNoteSecondary = SECONDARY_URL_OPTIONS.some(
+  (o) => o.value === uploadNoteSecondaryUrl
+);
+const initialSpeakers = content.speakers.length > 0 ? content.speakers : [{ title: "", href: "", image: "" }];
+const initialPartners = content.partners.length > 0 ? content.partners : [{ name: "", image: "" }];
+const initialGallery = content.gallery.length > 0 ? content.gallery : [{ caption: "", image: "" }];
+
+function toDateInputValue(value: string): string {
+  if (!value) return "";
+  const fromIso = new Date(value);
+  if (!Number.isNaN(fromIso.getTime())) return fromIso.toISOString().slice(0, 10);
+  const ymdMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
+  return ymdMatch ? ymdMatch[0] : "";
+}
+
+function toDateTimeLocalValue(value: string): string {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const yyyy = parsed.getFullYear();
+    const mm = pad(parsed.getMonth() + 1);
+    const dd = pad(parsed.getDate());
+    const hh = pad(parsed.getHours());
+    const mi = pad(parsed.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  }
+  const localMatch = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+  if (localMatch) return localMatch[0];
+  const dateOnlyMatch = value.match(/^\d{4}-\d{2}-\d{2}$/);
+  return dateOnlyMatch ? `${dateOnlyMatch[0]}T08:00` : "";
+}
+
+function toReadableDateLabel(value: string): string {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+const initialEventStartsAt = toDateTimeLocalValue(content.siteMeta.eventStartsAt);
+const initialEventDate = toDateInputValue(content.siteMeta.eventStartsAt || content.siteMeta.eventDateLabel);
+const initialEventDateLabel = toReadableDateLabel(initialEventDate) || content.siteMeta.eventDateLabel;
+const initialHeroBg = content.siteMeta.heroBg?.trim() || "";
+const initialHeroLogo = content.siteMeta.heroLogo?.trim() || "";
+const initialAboutImage = content.about.image?.trim() || "";
+const initialTimelineImage = content.timelineImage?.trim() || "";
+const initialGuideFlowImage = content.guide.flowImage?.trim() || "";
+const initialGuideFlowSteps = (content.guide.flowSteps || []).join("\n");
+const initialAgendaRows = (content.agenda.items || [])
+  .map((item) => [item.day, item.time, item.agenda, item.detail || ""].join("|"))
+  .join("\n");
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Admin Panel | DATAMATIKA 2026</title>
+    <style>
+      body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f7f4f1; color: #1f1f1f; }
+      .shell { max-width: 980px; margin: 0 auto; padding: 1rem; }
+      .topbar { display: flex; gap: .7rem; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+      h1 { margin: 0; font-size: 1.3rem; color: #9a3a00; }
+      .actions { display: flex; gap: .5rem; }
+      .form-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+      .speaker-item { border: 1px solid #ead8cb; border-radius: 10px; padding: .85rem; background: #fffdfa; margin-bottom: .8rem; }
+      .speaker-item h3 { margin: 0 0 .6rem; font-size: .95rem; color: #7f3605; }
+      .speaker-preview {
+        display: block;
+        width: min(100%, 200px);
+        max-width: 200px;
+        height: 140px;
+        max-height: 140px;
+        border-radius: 10px;
+        border: 1px solid #d8c8bc;
+        object-fit: contain;
+        aspect-ratio: 10 / 7;
+        background: #f5efea;
+      }
+      .speaker-item .speaker-preview {
+        width: 200px !important;
+        max-width: 200px !important;
+        height: 140px !important;
+        max-height: 140px !important;
+        object-fit: contain !important;
+      }
+      img.speaker-preview {
+        width: 200px !important;
+        max-width: 200px !important;
+        height: 140px !important;
+        max-height: 140px !important;
+        object-fit: contain !important;
+      }
+      .speaker-actions { display: flex; gap: .45rem; flex-wrap: wrap; margin-top: .5rem; }
+      .save-progress { height: 8px; border-radius: 999px; background: #ecd8ca; overflow: hidden; margin: 0 0 .8rem; display: none; }
+      .save-progress.is-loading { display: block; }
+      .save-progress__bar { height: 100%; width: 35%; background: linear-gradient(90deg, #c04800, #f7843f); animation: save-bar 1s linear infinite; }
+      .meta-note { margin: 0 0 .6rem; font-size: .82rem; color: #666; }
+      #guide-fee-free-group,
+      #guide-fee-paid-group {
+        display: grid;
+        gap: .8rem;
+      }
+      .is-hidden {
+        display: none !important;
+      }
+      .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 0.4rem;
+      }
+      .photo-grid .speaker-item {
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .photo-grid .speaker-item h3 { font-size: 0.88rem; }
+      .photo-grid .speaker-item .speaker-preview,
+      .photo-grid .speaker-item img.speaker-preview {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0;
+        max-height: 160px;
+        aspect-ratio: 4 / 3;
+        object-fit: contain;
+      }
+      .admin-accordion { margin: 0; }
+      .admin-accordion__summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        cursor: pointer;
+        user-select: none;
+        font-size: 1.02rem;
+        font-weight: 650;
+        margin: 0 0 0.65rem;
+        color: #1f1f1f;
+      }
+      .admin-accordion__summary::-webkit-details-marker { display: none; }
+      .admin-accordion[open] .admin-accordion__summary { margin-bottom: 0.5rem; }
+      .admin-accordion__chev { flex-shrink: 0; display: inline-block; transition: transform 0.18s ease; color: #9a3a00; font-size: 0.75em; }
+      .admin-accordion[open] .admin-accordion__chev { transform: rotate(180deg); }
+      .admin-accordion__content { margin-top: 0; }
+      .password-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      @keyframes save-bar { from { transform: translateX(-120%); } to { transform: translateX(360%); } }
+      button, .link { border: 0; border-radius: 10px; padding: .62rem .9rem; font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; }
+      .btn-primary { background: #c04800; color: #fff; }
+      .btn-secondary { background: #fff; color: #333; border: 1px solid #d5c3b5; }
+      .grid { display: grid; gap: 1rem; }
+      .card { background: #fff; border: 1px solid #ece2d8; border-radius: 14px; padding: 1rem; }
+      .card h2 { margin: 0 0 .85rem; font-size: 1.02rem; }
+      .fields { display: grid; gap: .8rem; }
+      label { display: grid; gap: .35rem; font-size: .9rem; }
+      input, textarea { width: 100%; padding: .62rem .68rem; border: 1px solid #d8c8bc; border-radius: 10px; font: inherit; }
+      textarea { min-height: 110px; resize: vertical; }
+      .muted { color: #666; font-size: .85rem; margin: .35rem 0 0; }
+      #status { min-height: 1rem; font-size: .9rem; margin: 0 0 .8rem; }
+      .ok { color: #1d7a1d; }
+      .err { color: #b42020; }
+      .toast {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1100;
+        min-width: min(88vw, 340px);
+        padding: .75rem .9rem;
+        border-radius: 10px;
+        color: #fff;
+        background: #374151;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, .18);
+        transform: translateY(-8px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease, transform .2s ease;
+      }
+      .toast.is-visible { opacity: 1; transform: translateY(0); }
+      .toast--loading { background: #9a3a00; }
+      .toast--ok { background: #176d17; }
+      .toast--err { background: #b91c1c; }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <div class="topbar">
+        <h1>Admin DATAMATIKA 2026</h1>
+        <div class="actions">
+          <button class="btn-secondary" id="logout-btn" type="button">Logout</button>
+        </div>
+      </div>
+      <div class="save-progress" id="save-progress" aria-hidden="true"><div class="save-progress__bar"></div></div>
+      <p id="status"></p>
+      <form id="admin-form" class="grid">
+        <section class="card">
+          <h2>Site Meta</h2>
+          <div class="fields">
+            <label>Title <input name="title" value={content.siteMeta.title} required /></label>
+            <label>Description <textarea name="description" required>{content.siteMeta.description}</textarea></label>
+            <label>Published URL <input name="publishedUrl" value={content.siteMeta.publishedUrl} required /></label>
+            <label>Registration URL <input name="registrationUrl" value={content.siteMeta.registrationUrl} required /></label>
+            <label>Organization Line <input name="orgLine" value={content.siteMeta.orgLine} required /></label>
+            <label>Alamat Venue (untuk halaman Maps)
+              <input name="mapsAddress" value={content.siteMeta.mapsAddress || ""} />
+            </label>
+            <label>Google Maps URL / Embed URL
+              <textarea name="mapsEmbedUrl" placeholder="Bisa tempel link Google Maps biasa, shortlink maps.app.goo.gl, atau URL embed">{content.siteMeta.mapsEmbedUrl || ""}</textarea>
+            </label>
+            <label>Hero Background (CMS)
+              <input id="hero-bg-url" name="heroBg" type="hidden" value={initialHeroBg} />
+              <img
+                id="hero-bg-preview"
+                class="speaker-preview"
+                src={initialHeroBg || "/patterns/empty.svg"}
+                alt="Preview hero background"
+                width="200"
+                height="140"
+                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
+              />
+              <div class="speaker-actions">
+                <input id="hero-bg-file" type="file" accept="image/png,image/jpeg,image/webp" />
+                <button class="btn-secondary" id="upload-hero-bg-btn" type="button">Upload Hero BG</button>
+              </div>
+            </label>
+            <label>Hero Logo (CMS)
+              <input id="hero-logo-url" name="heroLogo" type="hidden" value={initialHeroLogo} />
+              <img
+                id="hero-logo-preview"
+                class="speaker-preview"
+                src={initialHeroLogo || "/patterns/empty.svg"}
+                alt="Preview hero logo"
+                width="200"
+                height="140"
+                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
+              />
+              <div class="speaker-actions">
+                <input id="hero-logo-file" type="file" accept="image/png,image/jpeg,image/webp" />
+                <button class="btn-secondary" id="upload-hero-logo-btn" type="button">Upload Hero Logo</button>
+              </div>
+            </label>
+            <label>Event Starts At <input type="datetime-local" name="eventStartsAt" value={initialEventStartsAt} required /></label>
+            <label>Event Date (otomatis dari Event Starts At)
+              <input id="event-date-preview" type="text" value={initialEventDateLabel} readonly />
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>About Section</h2>
+          <div class="fields">
+            <label>Heading <input name="aboutHeading" value={content.about.heading} required /></label>
+            <label>Body <textarea name="aboutBody" required>{content.about.body}</textarea></label>
+            <label>Gambar Informasi
+              <input id="about-image-url" name="aboutImage" type="hidden" value={initialAboutImage} />
+              <img
+                id="about-image-preview"
+                class="speaker-preview"
+                src={initialAboutImage || "/patterns/empty.svg"}
+                alt="Preview gambar informasi"
+                width="200"
+                height="140"
+                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
+              />
+              <div class="speaker-actions">
+                <input id="about-image-file" type="file" accept="image/png,image/jpeg,image/webp" />
+                <button class="btn-secondary" id="upload-about-image-btn" type="button">Upload Gambar Informasi</button>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Timeline (1 item per baris, format: TANGGAL|LABEL)</h2>
+          <div class="fields">
+            <label>Gambar Timeline
+              <input id="timeline-image-url" name="timelineImage" type="hidden" value={initialTimelineImage} />
+              <img
+                id="timeline-image-preview"
+                class="speaker-preview"
+                src={initialTimelineImage || "/patterns/empty.svg"}
+                alt="Preview gambar timeline"
+                width="200"
+                height="140"
+                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
+              />
+              <div class="speaker-actions">
+                <input id="timeline-image-file" type="file" accept="image/png,image/jpeg,image/webp" />
+                <button class="btn-secondary" id="upload-timeline-image-btn" type="button">Upload Gambar Timeline</button>
+              </div>
+            </label>
+            <label>
+              Timeline
+              <textarea name="timeline" required>{content.timeline.map((item) => `${item.date}|${item.label}`).join("\n")}</textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Call for Papers Section</h2>
+          <div class="fields">
+            <label>Judul <input name="uploadNoteTitle" value={content.uploadNote.title} required /></label>
+            <label>Deskripsi <textarea name="uploadNoteBody" required>{content.uploadNote.body}</textarea></label>
+            <label>Teks Tombol Utama <input name="uploadNotePrimaryLabel" value={content.uploadNote.primaryLabel} required /></label>
+            <label>URL Tombol Utama <input name="uploadNotePrimaryUrl" value={content.uploadNote.primaryUrl} required /></label>
+            <label>Teks Tombol Sekunder <input name="uploadNoteSecondaryLabel" value={content.uploadNote.secondaryLabel} required /></label>
+            <label>
+              Tujuan tombol sekunder (section/halaman)
+              <select name="uploadNoteSecondaryUrl" required>
+                {
+                  SECONDARY_URL_OPTIONS.map((o) => (
+                    <option value={o.value} selected={isKnownUploadNoteSecondary && uploadNoteSecondaryUrl === o.value}>
+                      {o.label} ({o.value})
+                    </option>
+                  ))
+                }
+                {
+                  !isKnownUploadNoteSecondary && uploadNoteSecondaryUrl ? (
+                    <option value={uploadNoteSecondaryUrl} selected>
+                      Tersimpan: {uploadNoteSecondaryUrl}
+                    </option>
+                  ) : null
+                }
+              </select>
+              <span class="meta-note">Pilih langsung untuk section landing (#...) atau halaman baru (/agenda, /maps, /galeri, /panduan).</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Halaman Agenda</h2>
+          <div class="fields">
+            <label>Judul Agenda <input name="agendaTitle" value={content.agenda.title} required /></label>
+            <label>Deskripsi singkat agenda <textarea name="agendaIntro" required>{content.agenda.intro}</textarea></label>
+            <label>
+              Data Tabel Agenda (format: HARI|WAKTU|AGENDA|DETAIL (opsional), 1 baris = 1 row)
+              <textarea name="agendaRows" required>{initialAgendaRows}</textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Halaman Panduan</h2>
+          <div class="fields">
+            <label>Judul Alur Pendaftaran <input name="guideFlowTitle" value={content.guide.flowTitle} required /></label>
+            <label>
+              Alur Pendaftaran & Submit (1 langkah per baris)
+              <textarea name="guideFlowSteps" required>{initialGuideFlowSteps}</textarea>
+            </label>
+            <label>Gambar Ilustrasi Alur Submit
+              <input id="guide-flow-image-url" name="guideFlowImage" type="hidden" value={initialGuideFlowImage} />
+              <img
+                id="guide-flow-image-preview"
+                class="speaker-preview"
+                src={initialGuideFlowImage || "/patterns/empty.svg"}
+                alt="Preview ilustrasi panduan"
+                width="200"
+                height="140"
+                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
+              />
+              <div class="speaker-actions">
+                <input id="guide-flow-image-file" type="file" accept="image/png,image/jpeg,image/webp" />
+                <button class="btn-secondary" id="upload-guide-flow-image-btn" type="button">Upload Gambar Alur</button>
+              </div>
+            </label>
+            <label>Teks Tombol Template <input name="guideTemplateLabel" value={content.guide.templateLabel} required /></label>
+            <label>File Template Artikel
+              <input id="guide-template-url" name="guideTemplateUrl" value={content.guide.templateUrl} required />
+              <div class="speaker-actions">
+                <input id="guide-template-file" type="file" accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" />
+                <button class="btn-secondary" id="upload-guide-template-btn" type="button">Upload Template</button>
+              </div>
+              <span class="meta-note">Format didukung: DOC, DOCX, PDF (maks 10MB).</span>
+            </label>
+            <label>Mode Biaya Seminar
+              <select id="guide-fee-type" name="guideFeeType" required>
+                <option value="free" selected={content.guide.fee.type === "free"}>Gratis</option>
+                <option value="paid" selected={content.guide.fee.type === "paid"}>Berbayar</option>
+              </select>
+            </label>
+            <div id="guide-fee-free-group">
+              <label>Teks biaya gratis <input name="guideFeeFreeText" value={content.guide.fee.freeText} /></label>
+            </div>
+            <div id="guide-fee-paid-group">
+              <label>Nominal biaya <input name="guideFeePaidAmount" value={content.guide.fee.paidAmount} placeholder="Contoh: Rp150.000" /></label>
+              <label>Nomor rekening <input name="guideFeePaidAccountNumber" value={content.guide.fee.paidAccountNumber} /></label>
+              <label>Nama pemilik rekening <input name="guideFeePaidAccountName" value={content.guide.fee.paidAccountName} /></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Speakers</h2>
+          <p class="meta-note">Upload foto speaker (JPG/PNG/WEBP, max 2MB), lalu simpan perubahan. Kartu tersusun grid.</p>
+          <div class="photo-grid" id="speakers-list"></div>
+          <div class="speaker-actions">
+            <button class="btn-secondary" id="add-speaker-btn" type="button">+ Tambah Speaker</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Partner Pendukung</h2>
+          <p class="meta-note">Isi nama dan upload logo partner. Jika kosong semua, section partner otomatis disembunyikan. Pratinjau per grid.</p>
+          <div class="photo-grid" id="partners-list"></div>
+          <div class="speaker-actions">
+            <button class="btn-secondary" id="add-partner-btn" type="button">+ Tambah Partner</button>
+          </div>
+        </section>
+
+        <section class="card" id="admin-gallery">
+          <details class="admin-accordion" open>
+            <summary class="admin-accordion__summary">Galeri Seminar <span class="admin-accordion__chev" aria-hidden="true">▼</span></summary>
+            <div class="admin-accordion__content">
+              <p class="meta-note">Upload maks 2MB per foto, lalu Simpan. Lipat panel ini (klik judul) bila mau perpendek halaman. Pratinjau per grid.</p>
+              <div class="photo-grid" id="gallery-list"></div>
+              <div class="speaker-actions">
+                <button class="btn-secondary" id="add-gallery-btn" type="button">+ Tambah Foto Galeri</button>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="card">
+          <h2>Ubah Password Admin</h2>
+          <p class="meta-note">Jika `ADMIN_PASSWORD` ada di `.env`, ubah dari env (mode ini non-editable dari UI).</p>
+          <div class="password-grid">
+            <label>Password saat ini <input id="currentPassword" type="password" autocomplete="current-password" /></label>
+            <label>Password baru <input id="nextPassword" type="password" autocomplete="new-password" /></label>
+            <label>Konfirmasi password baru <input id="confirmPassword" type="password" autocomplete="new-password" /></label>
+          </div>
+          <div class="speaker-actions">
+            <button class="btn-secondary" id="change-password-btn" type="button">Update Password</button>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button class="btn-primary" id="save-btn" type="submit">Simpan Perubahan</button>
+          <a class="link btn-secondary" href="/" target="_blank" rel="noopener noreferrer">Lihat Landing</a>
+        </div>
+      </form>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script
+      is:inline
+      define:vars={{
+        initialSpeakers,
+        initialPartners,
+        initialGallery,
+        initialHeroBg,
+        initialHeroLogo,
+        initialAboutImage,
+        initialTimelineImage,
+        initialGuideFlowImage,
+      }}
+    >
+      const form = document.getElementById("admin-form");
+      const status = document.getElementById("status");
+      const logoutBtn = document.getElementById("logout-btn");
+      const saveBtn = document.getElementById("save-btn");
+      const saveProgress = document.getElementById("save-progress");
+      const speakersList = document.getElementById("speakers-list");
+      const addSpeakerBtn = document.getElementById("add-speaker-btn");
+      const partnersList = document.getElementById("partners-list");
+      const addPartnerBtn = document.getElementById("add-partner-btn");
+      const galleryList = document.getElementById("gallery-list");
+      const addGalleryBtn = document.getElementById("add-gallery-btn");
+      const heroBgUrlInput = document.getElementById("hero-bg-url");
+      const heroBgFileInput = document.getElementById("hero-bg-file");
+      const heroBgPreview = document.getElementById("hero-bg-preview");
+      const uploadHeroBgBtn = document.getElementById("upload-hero-bg-btn");
+      const heroLogoUrlInput = document.getElementById("hero-logo-url");
+      const heroLogoFileInput = document.getElementById("hero-logo-file");
+      const heroLogoPreview = document.getElementById("hero-logo-preview");
+      const uploadHeroLogoBtn = document.getElementById("upload-hero-logo-btn");
+      const aboutImageUrlInput = document.getElementById("about-image-url");
+      const aboutImageFileInput = document.getElementById("about-image-file");
+      const aboutImagePreview = document.getElementById("about-image-preview");
+      const uploadAboutImageBtn = document.getElementById("upload-about-image-btn");
+      const timelineImageUrlInput = document.getElementById("timeline-image-url");
+      const timelineImageFileInput = document.getElementById("timeline-image-file");
+      const timelineImagePreview = document.getElementById("timeline-image-preview");
+      const uploadTimelineImageBtn = document.getElementById("upload-timeline-image-btn");
+      const guideFlowImageUrlInput = document.getElementById("guide-flow-image-url");
+      const guideFlowImageFileInput = document.getElementById("guide-flow-image-file");
+      const guideFlowImagePreview = document.getElementById("guide-flow-image-preview");
+      const uploadGuideFlowImageBtn = document.getElementById("upload-guide-flow-image-btn");
+      const guideTemplateUrlInput = document.getElementById("guide-template-url");
+      const guideTemplateFileInput = document.getElementById("guide-template-file");
+      const uploadGuideTemplateBtn = document.getElementById("upload-guide-template-btn");
+      const guideFeeTypeInput = document.getElementById("guide-fee-type");
+      const guideFeeFreeGroup = document.getElementById("guide-fee-free-group");
+      const guideFeePaidGroup = document.getElementById("guide-fee-paid-group");
+      const changePasswordBtn = document.getElementById("change-password-btn");
+      const currentPasswordInput = document.getElementById("currentPassword");
+      const nextPasswordInput = document.getElementById("nextPassword");
+      const confirmPasswordInput = document.getElementById("confirmPassword");
+      const toast = document.getElementById("toast");
+      const eventStartsAtInput = form?.elements?.namedItem?.("eventStartsAt");
+      const eventDatePreviewInput = document.getElementById("event-date-preview");
+      const speakerSeeds = Array.isArray(initialSpeakers) ? initialSpeakers : [];
+      const partnerSeeds = Array.isArray(initialPartners) ? initialPartners : [];
+      const gallerySeeds = Array.isArray(initialGallery) ? initialGallery : [];
+      let toastTimer = null;
+
+      function setStatus(message, type) {
+        if (!status) return;
+        status.textContent = message;
+        status.className = type === "ok" ? "ok" : type === "err" ? "err" : "";
+      }
+
+      function showToast(message, type = "loading", ttl = 2200) {
+        if (!(toast instanceof HTMLElement)) return;
+        if (toastTimer) clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.className = `toast toast--${type} is-visible`;
+        toastTimer = setTimeout(() => {
+          toast.classList.remove("is-visible");
+        }, ttl);
+      }
+
+      function setSavingUi(isSaving) {
+        if (saveBtn instanceof HTMLButtonElement) {
+          saveBtn.disabled = isSaving;
+          saveBtn.textContent = isSaving ? "Menyimpan..." : "Simpan Perubahan";
+        }
+        if (saveProgress) {
+          saveProgress.classList.toggle("is-loading", isSaving);
+          saveProgress.setAttribute("aria-hidden", isSaving ? "false" : "true");
+        }
+      }
+
+      function formatDateLabelFromInput(value) {
+        if (typeof value !== "string" || !value) return "";
+        const date = new Date(`${value}T00:00:00`);
+        if (Number.isNaN(date.getTime())) return value;
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      }
+
+      function updateEventDatePreview() {
+        if (!(eventStartsAtInput instanceof HTMLInputElement)) return;
+        if (!(eventDatePreviewInput instanceof HTMLInputElement)) return;
+        const dateValue = eventStartsAtInput.value.split("T")[0] ?? "";
+        eventDatePreviewInput.value = formatDateLabelFromInput(dateValue);
+      }
+
+      function normalizePreviewUrl(url) {
+        if (typeof url !== "string") return "/patterns/empty.svg";
+        const cleaned = url.trim().replace(/^["']|["']$/g, "");
+        if (!cleaned) return "/patterns/empty.svg";
+        if (cleaned.startsWith("blob:") || cleaned.startsWith("data:")) return cleaned;
+        if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) return cleaned;
+        if (cleaned.startsWith("/")) return cleaned;
+        return `/${cleaned}`;
+      }
+
+      function setPreviewSource(img, url) {
+        if (!(img instanceof HTMLImageElement)) return;
+        const previousSrc = img.currentSrc || img.src;
+        img.onerror = () => {
+          img.onerror = null;
+          if (previousSrc && !previousSrc.includes("/patterns/empty.svg")) {
+            img.src = previousSrc;
+          } else {
+            img.src = "/patterns/empty.svg";
+          }
+        };
+        img.src = normalizePreviewUrl(url);
+      }
+
+      function setHeroPreview(url) {
+        if (!(heroBgPreview instanceof HTMLImageElement)) return;
+        setPreviewSource(heroBgPreview, url);
+      }
+
+      function setHeroLogoPreview(url) {
+        if (!(heroLogoPreview instanceof HTMLImageElement)) return;
+        setPreviewSource(heroLogoPreview, url);
+      }
+
+      function setAboutImagePreview(url) {
+        if (!(aboutImagePreview instanceof HTMLImageElement)) return;
+        setPreviewSource(aboutImagePreview, url);
+      }
+
+      function setTimelineImagePreview(url) {
+        if (!(timelineImagePreview instanceof HTMLImageElement)) return;
+        setPreviewSource(timelineImagePreview, url);
+      }
+
+      function setGuideFlowImagePreview(url) {
+        if (!(guideFlowImagePreview instanceof HTMLImageElement)) return;
+        setPreviewSource(guideFlowImagePreview, url);
+      }
+
+      function syncGuideFeeFields() {
+        if (!(guideFeeTypeInput instanceof HTMLSelectElement)) return;
+        const isPaid = guideFeeTypeInput.value === "paid";
+        guideFeeFreeGroup?.classList.toggle("is-hidden", isPaid);
+        guideFeePaidGroup?.classList.toggle("is-hidden", !isPaid);
+      }
+
+      function createSpeakerItem(speaker = { title: "", href: "", image: "" }) {
+        if (!speakersList) return;
+        const item = document.createElement("article");
+        item.className = "speaker-item";
+        item.innerHTML = `
+          <h3>Speaker</h3>
+          <label>Nama <input data-key="title" value="${(speaker.title ?? "").replace(/"/g, "&quot;")}" required /></label>
+          <label>Link Profil (opsional) <input data-key="href" value="${(speaker.href ?? "").replace(/"/g, "&quot;")}" /></label>
+          <input data-key="image" type="hidden" value="${(speaker.image ?? "").replace(/"/g, "&quot;")}" />
+          <img class="speaker-preview" width="200" height="150" style="object-fit:contain;display:block;" src="${normalizePreviewUrl(speaker.image || "/patterns/empty.svg")}" alt="Preview speaker" onerror="this.onerror=null;this.src='/patterns/empty.svg';" />
+          <div class="speaker-actions">
+            <input type="file" accept="image/png,image/jpeg,image/webp" />
+            <button class="btn-secondary" type="button" data-action="upload">Upload Foto</button>
+            <button class="btn-secondary" type="button" data-action="remove">Hapus</button>
+          </div>
+        `;
+        speakersList.appendChild(item);
+      }
+
+      function readSpeakers() {
+        if (!speakersList) return [];
+        return [...speakersList.querySelectorAll(".speaker-item")]
+          .map((item) => {
+            const title = item.querySelector('[data-key="title"]')?.value?.trim() ?? "";
+            const href = item.querySelector('[data-key="href"]')?.value?.trim() ?? "";
+            const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+            return {
+              title,
+              ...(href ? { href } : {}),
+              ...(image ? { image } : {}),
+            };
+          })
+          .filter((speaker) => speaker.title);
+      }
+
+      function createPartnerItem(partner = { name: "", image: "" }) {
+        if (!partnersList) return;
+        const item = document.createElement("article");
+        item.className = "speaker-item";
+        item.innerHTML = `
+          <h3>Partner</h3>
+          <label>Nama Partner <input data-key="name" value="${(partner.name ?? "").replace(/"/g, "&quot;")}" required /></label>
+          <input data-key="image" type="hidden" value="${(partner.image ?? "").replace(/"/g, "&quot;")}" />
+          <img class="speaker-preview" width="200" height="150" style="object-fit:contain;display:block;" src="${normalizePreviewUrl(partner.image || "/patterns/empty.svg")}" alt="Preview partner" onerror="this.onerror=null;this.src='/patterns/empty.svg';" />
+          <div class="speaker-actions">
+            <input type="file" accept="image/png,image/jpeg,image/webp" />
+            <button class="btn-secondary" type="button" data-action="upload">Upload Logo</button>
+            <button class="btn-secondary" type="button" data-action="remove">Hapus</button>
+          </div>
+        `;
+        partnersList.appendChild(item);
+      }
+
+      function readPartners() {
+        if (!partnersList) return [];
+        return [...partnersList.querySelectorAll(".speaker-item")]
+          .map((item) => {
+            const name = item.querySelector('[data-key="name"]')?.value?.trim() ?? "";
+            const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+            return {
+              name,
+              ...(image ? { image } : {}),
+            };
+          })
+          .filter((partner) => partner.name && partner.image);
+      }
+
+      function createGalleryItem(entry = { caption: "", image: "" }) {
+        if (!galleryList) return;
+        const item = document.createElement("article");
+        item.className = "speaker-item gallery-item";
+        item.innerHTML = `
+          <h3>Foto Galeri</h3>
+          <label>Keterangan (opsional) <input data-key="caption" value="${(entry.caption ?? "").replace(/"/g, "&quot;")}" /></label>
+          <input data-key="image" type="hidden" value="${(entry.image ?? "").replace(/"/g, "&quot;")}" />
+          <img class="speaker-preview" width="200" height="150" style="object-fit:contain;display:block;" src="${normalizePreviewUrl(entry.image || "/patterns/empty.svg")}" alt="Preview galeri" onerror="this.onerror=null;this.src='/patterns/empty.svg';" />
+          <div class="speaker-actions">
+            <input type="file" accept="image/png,image/jpeg,image/webp" />
+            <button class="btn-secondary" type="button" data-action="upload">Upload Foto</button>
+            <button class="btn-secondary" type="button" data-action="remove">Hapus</button>
+          </div>
+        `;
+        galleryList.appendChild(item);
+      }
+
+      function readGallery() {
+        if (!galleryList) return [];
+        return [...galleryList.querySelectorAll(".gallery-item")]
+          .map((item) => {
+            const caption = item.querySelector('[data-key="caption"]')?.value?.trim() ?? "";
+            const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+            return {
+              ...(caption ? { caption } : {}),
+              ...(image ? { image } : {}),
+            };
+          })
+          .filter((entry) => entry.image);
+      }
+
+      for (const speaker of speakerSeeds) createSpeakerItem(speaker);
+      for (const partner of partnerSeeds) createPartnerItem(partner);
+      for (const entry of gallerySeeds) createGalleryItem(entry);
+
+      addSpeakerBtn?.addEventListener("click", () => createSpeakerItem());
+      addPartnerBtn?.addEventListener("click", () => createPartnerItem());
+      addGalleryBtn?.addEventListener("click", () => createGalleryItem());
+      eventStartsAtInput?.addEventListener("change", updateEventDatePreview);
+      eventStartsAtInput?.addEventListener("input", updateEventDatePreview);
+      updateEventDatePreview();
+      setHeroPreview(initialHeroBg);
+      setHeroLogoPreview(initialHeroLogo);
+      setAboutImagePreview(initialAboutImage);
+      setTimelineImagePreview(initialTimelineImage);
+      setGuideFlowImagePreview(initialGuideFlowImage);
+      syncGuideFeeFields();
+
+      heroBgFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        setHeroPreview(URL.createObjectURL(target.files[0]));
+      });
+
+      uploadHeroBgBtn?.addEventListener("click", async () => {
+        if (!(heroBgFileInput instanceof HTMLInputElement) || !heroBgFileInput.files?.length) {
+          setStatus("Pilih file Hero BG dulu sebelum upload.", "err");
+          showToast("Pilih file Hero BG dulu sebelum upload.", "err");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", heroBgFileInput.files[0]);
+        formData.append("uploadType", "heroBg");
+
+        uploadHeroBgBtn.setAttribute("disabled", "true");
+        uploadHeroBgBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        uploadHeroBgBtn.removeAttribute("disabled");
+        uploadHeroBgBtn.textContent = "Upload Hero BG";
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          return;
+        }
+
+        const data = await response.json();
+        if (heroBgUrlInput instanceof HTMLInputElement) heroBgUrlInput.value = data.url;
+        setHeroPreview(data.url);
+        setStatus("Hero background berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Hero background berhasil diunggah dan ditampilkan.", "ok");
+      });
+
+      heroLogoFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        setHeroLogoPreview(URL.createObjectURL(target.files[0]));
+      });
+
+      uploadHeroLogoBtn?.addEventListener("click", async () => {
+        if (!(heroLogoFileInput instanceof HTMLInputElement) || !heroLogoFileInput.files?.length) {
+          setStatus("Pilih file Hero Logo dulu sebelum upload.", "err");
+          showToast("Pilih file Hero Logo dulu sebelum upload.", "err");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", heroLogoFileInput.files[0]);
+        formData.append("uploadType", "heroLogo");
+
+        uploadHeroLogoBtn.setAttribute("disabled", "true");
+        uploadHeroLogoBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        uploadHeroLogoBtn.removeAttribute("disabled");
+        uploadHeroLogoBtn.textContent = "Upload Hero Logo";
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          return;
+        }
+
+        const data = await response.json();
+        if (heroLogoUrlInput instanceof HTMLInputElement) heroLogoUrlInput.value = data.url;
+        setHeroLogoPreview(data.url);
+        setStatus("Hero logo berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Hero logo berhasil diunggah dan ditampilkan.", "ok");
+      });
+
+      aboutImageFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        setAboutImagePreview(URL.createObjectURL(target.files[0]));
+      });
+
+      uploadAboutImageBtn?.addEventListener("click", async () => {
+        if (!(aboutImageFileInput instanceof HTMLInputElement) || !aboutImageFileInput.files?.length) {
+          setStatus("Pilih gambar Informasi dulu sebelum upload.", "err");
+          showToast("Pilih gambar Informasi dulu sebelum upload.", "err");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", aboutImageFileInput.files[0]);
+        formData.append("uploadType", "aboutImage");
+
+        uploadAboutImageBtn.setAttribute("disabled", "true");
+        uploadAboutImageBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        uploadAboutImageBtn.removeAttribute("disabled");
+        uploadAboutImageBtn.textContent = "Upload Gambar Informasi";
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          return;
+        }
+
+        const data = await response.json();
+        if (aboutImageUrlInput instanceof HTMLInputElement) aboutImageUrlInput.value = data.url;
+        setAboutImagePreview(data.url);
+        setStatus("Gambar Informasi berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Gambar Informasi berhasil diunggah dan ditampilkan.", "ok");
+      });
+
+      timelineImageFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        setTimelineImagePreview(URL.createObjectURL(target.files[0]));
+      });
+
+      guideFeeTypeInput?.addEventListener("change", syncGuideFeeFields);
+
+      guideFlowImageFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        setGuideFlowImagePreview(URL.createObjectURL(target.files[0]));
+      });
+
+      uploadTimelineImageBtn?.addEventListener("click", async () => {
+        if (!(timelineImageFileInput instanceof HTMLInputElement) || !timelineImageFileInput.files?.length) {
+          setStatus("Pilih gambar Timeline dulu sebelum upload.", "err");
+          showToast("Pilih gambar Timeline dulu sebelum upload.", "err");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", timelineImageFileInput.files[0]);
+        formData.append("uploadType", "timelineImage");
+
+        uploadTimelineImageBtn.setAttribute("disabled", "true");
+        uploadTimelineImageBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        uploadTimelineImageBtn.removeAttribute("disabled");
+        uploadTimelineImageBtn.textContent = "Upload Gambar Timeline";
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          return;
+        }
+
+        const data = await response.json();
+        if (timelineImageUrlInput instanceof HTMLInputElement) timelineImageUrlInput.value = data.url;
+        setTimelineImagePreview(data.url);
+        setStatus("Gambar Timeline berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Gambar Timeline berhasil diunggah dan ditampilkan.", "ok");
+      });
+
+      uploadGuideFlowImageBtn?.addEventListener("click", async () => {
+        if (!(guideFlowImageFileInput instanceof HTMLInputElement) || !guideFlowImageFileInput.files?.length) {
+          setStatus("Pilih gambar alur panduan dulu sebelum upload.", "err");
+          showToast("Pilih gambar alur panduan dulu sebelum upload.", "err");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", guideFlowImageFileInput.files[0]);
+        formData.append("uploadType", "guideFlowImage");
+
+        uploadGuideFlowImageBtn.setAttribute("disabled", "true");
+        uploadGuideFlowImageBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        uploadGuideFlowImageBtn.removeAttribute("disabled");
+        uploadGuideFlowImageBtn.textContent = "Upload Gambar Alur";
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          return;
+        }
+
+        const data = await response.json();
+        if (guideFlowImageUrlInput instanceof HTMLInputElement) guideFlowImageUrlInput.value = data.url;
+        setGuideFlowImagePreview(data.url);
+        setStatus("Gambar alur panduan berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Gambar alur panduan berhasil diunggah dan ditampilkan.", "ok");
+      });
+
+      uploadGuideTemplateBtn?.addEventListener("click", async () => {
+        if (!(guideTemplateFileInput instanceof HTMLInputElement) || !guideTemplateFileInput.files?.length) {
+          setStatus("Pilih file template dulu sebelum upload.", "err");
+          showToast("Pilih file template dulu sebelum upload.", "err");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", guideTemplateFileInput.files[0]);
+        formData.append("uploadType", "guideTemplate");
+
+        uploadGuideTemplateBtn.setAttribute("disabled", "true");
+        uploadGuideTemplateBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        uploadGuideTemplateBtn.removeAttribute("disabled");
+        uploadGuideTemplateBtn.textContent = "Upload Template";
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          return;
+        }
+
+        const data = await response.json();
+        if (guideTemplateUrlInput instanceof HTMLInputElement) guideTemplateUrlInput.value = data.url;
+        setStatus("Template artikel berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Template artikel berhasil diunggah dan siap digunakan.", "ok");
+      });
+
+      speakersList?.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const action = target.getAttribute("data-action");
+        if (!action) return;
+
+        const item = target.closest(".speaker-item");
+        if (!item) return;
+
+        if (action === "remove") {
+          item.remove();
+          return;
+        }
+
+        if (action === "upload") {
+          const fileInput = item.querySelector('input[type="file"]');
+          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+            setStatus("Pilih file gambar dulu sebelum upload.", "err");
+            showToast("Pilih file gambar dulu sebelum upload.", "err");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("image", fileInput.files[0]);
+          formData.append("uploadType", "speaker");
+
+          target.setAttribute("disabled", "true");
+          target.textContent = "Uploading...";
+          const response = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+          target.removeAttribute("disabled");
+          target.textContent = "Upload Foto";
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+            setStatus(data.message ?? "Upload gagal.", "err");
+            showToast(data.message ?? "Upload gagal.", "err");
+            return;
+          }
+
+          const data = await response.json();
+          const imageInput = item.querySelector('[data-key="image"]');
+          const preview = item.querySelector(".speaker-preview");
+          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
+          setPreviewSource(preview, data.url);
+          setStatus("Foto speaker berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+          showToast("Foto speaker berhasil diunggah dan ditampilkan.", "ok");
+        }
+      });
+
+      speakersList?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+        if (!target.files?.length) return;
+        const item = target.closest(".speaker-item");
+        if (!item) return;
+        const preview = item.querySelector(".speaker-preview");
+        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+      });
+
+      partnersList?.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const action = target.getAttribute("data-action");
+        if (!action) return;
+
+        const item = target.closest(".speaker-item");
+        if (!item) return;
+
+        if (action === "remove") {
+          item.remove();
+          return;
+        }
+
+        if (action === "upload") {
+          const fileInput = item.querySelector('input[type="file"]');
+          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+            setStatus("Pilih file logo dulu sebelum upload.", "err");
+            showToast("Pilih file logo dulu sebelum upload.", "err");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("image", fileInput.files[0]);
+          formData.append("uploadType", "partner");
+
+          target.setAttribute("disabled", "true");
+          target.textContent = "Uploading...";
+          const response = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+          target.removeAttribute("disabled");
+          target.textContent = "Upload Logo";
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+            setStatus(data.message ?? "Upload gagal.", "err");
+            showToast(data.message ?? "Upload gagal.", "err");
+            return;
+          }
+
+          const data = await response.json();
+          const imageInput = item.querySelector('[data-key="image"]');
+          const preview = item.querySelector(".speaker-preview");
+          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
+          setPreviewSource(preview, data.url);
+          setStatus("Logo partner berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+          showToast("Logo partner berhasil diunggah dan ditampilkan.", "ok");
+        }
+      });
+
+      partnersList?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+        if (!target.files?.length) return;
+        const item = target.closest(".speaker-item");
+        if (!item) return;
+        const preview = item.querySelector(".speaker-preview");
+        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+      });
+
+      galleryList?.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const action = target.getAttribute("data-action");
+        if (!action) return;
+
+        const item = target.closest(".gallery-item");
+        if (!item) return;
+
+        if (action === "remove") {
+          item.remove();
+          return;
+        }
+
+        if (action === "upload") {
+          const fileInput = item.querySelector('input[type="file"]');
+          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+            setStatus("Pilih foto galeri dulu sebelum upload.", "err");
+            showToast("Pilih foto galeri dulu sebelum upload.", "err");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("image", fileInput.files[0]);
+          formData.append("uploadType", "gallery");
+
+          target.setAttribute("disabled", "true");
+          target.textContent = "Uploading...";
+          const response = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+          target.removeAttribute("disabled");
+          target.textContent = "Upload Foto";
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+            setStatus(data.message ?? "Upload gagal.", "err");
+            showToast(data.message ?? "Upload gagal.", "err");
+            return;
+          }
+
+          const data = await response.json();
+          const imageInput = item.querySelector('[data-key="image"]');
+          const preview = item.querySelector(".speaker-preview");
+          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
+          setPreviewSource(preview, data.url);
+          setStatus("Foto galeri berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+          showToast("Foto galeri berhasil diunggah dan ditampilkan.", "ok");
+        }
+      });
+
+      galleryList?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+        if (!target.files?.length) return;
+        const item = target.closest(".gallery-item");
+        if (!item) return;
+        const preview = item.querySelector(".speaker-preview");
+        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+      });
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!(form instanceof HTMLFormElement)) return;
+        setSavingUi(true);
+        showToast("Sedang menyimpan perubahan...", "loading", 60000);
+        const startedAt = Date.now();
+
+        const timeline = form.timeline.value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.split("|").map((x) => x.trim()))
+          .map(([date, label]) => ({ date: date ?? "", label: label ?? "" }))
+          .filter((item) => item.date && item.label);
+        const guideFlowSteps = form.guideFlowSteps.value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean);
+        const agendaItems = form.agendaRows.value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.split("|").map((x) => x.trim()))
+          .map(([day, time, agenda, detail]) => ({
+            day: day ?? "",
+            time: time ?? "",
+            agenda: agenda ?? "",
+            ...(detail ? { detail } : {}),
+          }))
+          .filter((item) => item.day && item.time && item.agenda);
+
+        const speakers = readSpeakers();
+        const partners = readPartners();
+        const gallery = readGallery();
+
+        const payload = {
+          siteMeta: {
+            title: form.title.value,
+            description: form.description.value,
+            publishedUrl: form.publishedUrl.value,
+            registrationUrl: form.registrationUrl.value,
+            orgLine: form.orgLine.value,
+            mapsAddress: form.mapsAddress.value,
+            mapsEmbedUrl: form.mapsEmbedUrl.value,
+            heroBg: form.heroBg.value,
+            heroLogo: form.heroLogo.value,
+            eventStartsAt: form.eventStartsAt.value,
+            eventDateLabel: formatDateLabelFromInput((form.eventStartsAt.value || "").split("T")[0] || ""),
+          },
+          about: {
+            heading: form.aboutHeading.value,
+            body: form.aboutBody.value,
+            image: form.aboutImage.value,
+          },
+          timeline,
+          uploadNote: {
+            title: form.uploadNoteTitle.value,
+            body: form.uploadNoteBody.value,
+            primaryLabel: form.uploadNotePrimaryLabel.value,
+            primaryUrl: form.uploadNotePrimaryUrl.value,
+            secondaryLabel: form.uploadNoteSecondaryLabel.value,
+            secondaryUrl: form.uploadNoteSecondaryUrl.value,
+          },
+          guide: {
+            flowTitle: form.guideFlowTitle.value,
+            flowSteps: guideFlowSteps,
+            flowImage: form.guideFlowImage.value,
+            templateLabel: form.guideTemplateLabel.value,
+            templateUrl: form.guideTemplateUrl.value,
+            fee: {
+              type: form.guideFeeType.value === "paid" ? "paid" : "free",
+              freeText: form.guideFeeFreeText.value,
+              paidAmount: form.guideFeePaidAmount.value,
+              paidAccountNumber: form.guideFeePaidAccountNumber.value,
+              paidAccountName: form.guideFeePaidAccountName.value,
+            },
+          },
+          agenda: {
+            title: form.agendaTitle.value,
+            intro: form.agendaIntro.value,
+            items: agendaItems,
+          },
+          timelineImage: form.timelineImage.value,
+          speakers,
+          partners,
+          gallery,
+        };
+
+        setStatus("Menyimpan...", "");
+        try {
+          const response = await fetch("/api/admin/content", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({ message: "Gagal menyimpan." }));
+            setStatus(data.message ?? "Gagal menyimpan.", "err");
+            showToast(data.message ?? "Gagal menyimpan.", "err");
+            return;
+          }
+
+          setStatus("Konten berhasil disimpan.", "ok");
+          showToast("Perubahan berhasil disimpan.", "ok");
+        } catch {
+          setStatus("Gagal menyimpan. Periksa koneksi atau server lokal.", "err");
+          showToast("Gagal menyimpan. Periksa koneksi/server.", "err");
+        } finally {
+          const elapsed = Date.now() - startedAt;
+          const minimumVisible = 700;
+          if (elapsed < minimumVisible) {
+            await new Promise((resolve) => setTimeout(resolve, minimumVisible - elapsed));
+          }
+          setSavingUi(false);
+        }
+      });
+
+      changePasswordBtn?.addEventListener("click", async () => {
+        if (!(currentPasswordInput instanceof HTMLInputElement)) return;
+        if (!(nextPasswordInput instanceof HTMLInputElement)) return;
+        if (!(confirmPasswordInput instanceof HTMLInputElement)) return;
+
+        const payload = {
+          currentPassword: currentPasswordInput.value,
+          nextPassword: nextPasswordInput.value,
+          confirmPassword: confirmPasswordInput.value,
+        };
+
+        showToast("Memperbarui password...", "loading", 20000);
+        try {
+          const response = await fetch("/api/admin/password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json().catch(() => ({ message: "Gagal update password." }));
+          const msg = data.message ?? "Gagal update password.";
+          setStatus(msg, response.ok ? "ok" : "err");
+          if (response.ok) {
+            showToast(msg, "ok");
+            currentPasswordInput.value = "";
+            nextPasswordInput.value = "";
+            confirmPasswordInput.value = "";
+          } else {
+            showToast(msg, "err");
+          }
+        } catch {
+          const msg = "Gagal memperbarui password. Periksa koneksi/server.";
+          setStatus(msg, "err");
+          showToast(msg, "err");
+        }
+      });
+
+      logoutBtn?.addEventListener("click", async () => {
+        await fetch("/api/admin/logout", { method: "POST" });
+        window.location.href = "/admin/login";
+      });
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import HeroSection from "../components/HeroSection.astro";
+import AboutSection from "../components/AboutSection.astro";
+import TimelineSection from "../components/TimelineSection.astro";
+import SpeakersBanner from "../components/SpeakersBanner.astro";
+import SpeakersGrid from "../components/SpeakersGrid.astro";
+import UploadNote from "../components/UploadNote.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+---
+
+<BaseLayout>
+  <SiteHeader />
+  <main id="main">
+    <HeroSection />
+    <AboutSection />
+    <TimelineSection />
+    <SpeakersBanner />
+    <SpeakersGrid />
+    <UploadNote />
+  </main>
+  <SiteFooter />
+</BaseLayout>

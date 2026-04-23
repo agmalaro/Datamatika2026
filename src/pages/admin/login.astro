@@ -1,0 +1,81 @@
+---
+import { isAuthenticated } from "../../lib/admin-auth";
+
+if (isAuthenticated(Astro.cookies)) {
+  return Astro.redirect("/admin");
+}
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Login Admin | DATAMATIKA 2026</title>
+    <style>
+      :root { color-scheme: light; }
+      body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f7f4f1; color: #1f1f1f; }
+      .wrap { min-height: 100dvh; display: grid; place-items: center; padding: 1rem; }
+      .card { width: min(100%, 420px); background: #fff; border: 1px solid #ece2d8; border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.08); padding: 1.5rem; }
+      h1 { margin: 0 0 0.35rem; font-size: 1.4rem; color: #9a3a00; }
+      p { margin: 0 0 1.25rem; color: #555; }
+      label { display: grid; gap: 0.4rem; margin-bottom: 0.9rem; font-size: 0.92rem; }
+      input { width: 100%; padding: 0.68rem 0.75rem; border-radius: 10px; border: 1px solid #d9c9bc; font: inherit; }
+      button { width: 100%; border: 0; border-radius: 10px; padding: 0.74rem; background: #c04800; color: #fff; font-weight: 700; cursor: pointer; }
+      .hint { margin-top: 0.9rem; font-size: 0.8rem; color: #777; }
+      .error { margin: 0.6rem 0 0.8rem; color: #b12020; font-size: 0.88rem; min-height: 1.1rem; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <form id="login-form" class="card">
+        <h1>Admin Login</h1>
+        <p>Masuk untuk mengelola konten landing page.</p>
+        <label>
+          Username
+          <input id="username" type="text" name="username" autocomplete="username" required />
+        </label>
+        <label>
+          Password
+          <input id="password" type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <p class="error" id="error-text"></p>
+        <button type="submit">Masuk</button>
+        <p class="hint">Default lokal: <code>user: admin </code>. Password Tanya Admin.</p>
+      </form>
+    </main>
+
+    <script is:inline>
+      const form = document.getElementById("login-form");
+      const errorText = document.getElementById("error-text");
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!(form instanceof HTMLFormElement)) return;
+        errorText.textContent = "";
+
+        const payload = {
+          username: form.username.value,
+          password: form.password.value,
+        };
+
+        const response = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Login gagal." }));
+          errorText.textContent = data.message ?? "Login gagal.";
+          return;
+        }
+
+        window.location.href = "/admin";
+      });
+    </script>
+  </body>
+</html>
+

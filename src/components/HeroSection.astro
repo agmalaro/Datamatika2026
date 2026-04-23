@@ -1,0 +1,135 @@
+---
+import { getSiteData, images } from "../data/site";
+import datamatikaWordmark from "../assets/logos/datamatika-nav-logo.png";
+
+const { siteMeta } = getSiteData();
+const { eventStartsAt, eventDateLabel } = siteMeta;
+const heroLogoStyle: "glass" | "plain" = "plain";
+const heroBackground = siteMeta.heroBg || images.heroBg;
+const heroLogo = siteMeta.heroLogo || datamatikaWordmark.src;
+---
+
+<section id="beranda" class="hero" style={`--hero-bg: url('${heroBackground}')`}>
+  <div class="hero__inner">
+    <span class="hero__eyebrow">SSMI IPB MEMPERSEMBAHKAN</span>
+    <img
+      class:list={["hero__brand-mark", heroLogoStyle === "plain" && "hero__brand-mark--plain"]}
+      src={heroLogo}
+      alt="Logo DATAMATIKA 2026"
+      width="1011"
+      height="141"
+      loading="eager"
+      decoding="async"
+    />
+
+    <div
+      class="countdown"
+      id="event-countdown"
+      data-starts-at={eventStartsAt}
+      role="region"
+      aria-label={`Hitung mundur menuju acara ${eventDateLabel}`}
+    >
+      <p class="countdown__eyebrow">
+        Menuju hari H · <time datetime={eventStartsAt}>{eventDateLabel}</time>
+      </p>
+      <p class="countdown__time-note" aria-hidden="true">Mulai pukul 08.00 WIB</p>
+      <div class="countdown__grid" role="timer" aria-label="Sisa waktu menuju acara">
+        <div class="countdown__unit">
+          <span class="countdown__value" data-unit="days">—</span>
+          <span class="countdown__label">Hari</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-unit="hours">—</span>
+          <span class="countdown__label">Jam</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-unit="minutes">—</span>
+          <span class="countdown__label">Menit</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-unit="seconds">—</span>
+          <span class="countdown__label">Detik</span>
+        </div>
+      </div>
+      <p class="countdown__done" id="countdown-done" hidden>Selamat datang di hari pelaksanaan acara.</p>
+    </div>
+
+    <div class="hero__actions">
+      <a
+        class="btn btn--primary btn--pulse"
+        href={siteMeta.registrationUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Daftar sekarang
+      </a>
+      <a class="btn btn--ghost" href="#timeline">Lihat jadwal</a>
+    </div>
+  </div>
+  <div class="hero__scroll">
+    <a href="#about">
+      <span class="hero__scroll-kbd" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      Gulir ke bawah
+    </a>
+  </div>
+</section>
+
+<script define:vars={{ eventStartsAt }}>
+  (function () {
+    var root = document.getElementById("event-countdown");
+    if (!root) return;
+    var attr = root.getAttribute("data-starts-at") || eventStartsAt;
+    var target = Date.parse(attr);
+    if (Number.isNaN(target)) return;
+
+    var els = {
+      days: root.querySelector('[data-unit="days"]'),
+      hours: root.querySelector('[data-unit="hours"]'),
+      minutes: root.querySelector('[data-unit="minutes"]'),
+      seconds: root.querySelector('[data-unit="seconds"]'),
+    };
+    var grid = root.querySelector(".countdown__grid");
+    var done = document.getElementById("countdown-done");
+    var eyebrow = root.querySelector(".countdown__eyebrow");
+    var timeNote = root.querySelector(".countdown__time-note");
+
+    function pad(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function tick() {
+      var diff = target - Date.now();
+      if (diff <= 0) {
+        if (els.days) els.days.textContent = "0";
+        if (els.hours) els.hours.textContent = "0";
+        if (els.minutes) els.minutes.textContent = "0";
+        if (els.seconds) els.seconds.textContent = "0";
+        if (grid) grid.setAttribute("hidden", "true");
+        if (eyebrow) eyebrow.setAttribute("hidden", "true");
+        if (timeNote) timeNote.setAttribute("hidden", "true");
+        if (done) done.removeAttribute("hidden");
+        root.classList.add("countdown--ended");
+        return false;
+      }
+      var totalSec = Math.floor(diff / 1000);
+      var days = Math.floor(totalSec / 86400);
+      var hours = Math.floor((totalSec % 86400) / 3600);
+      var minutes = Math.floor((totalSec % 3600) / 60);
+      var seconds = totalSec % 60;
+      if (els.days) els.days.textContent = String(days);
+      if (els.hours) els.hours.textContent = pad(hours);
+      if (els.minutes) els.minutes.textContent = pad(minutes);
+      if (els.seconds) els.seconds.textContent = pad(seconds);
+      return true;
+    }
+
+    if (!tick()) return;
+    var id = window.setInterval(function () {
+      if (!tick()) window.clearInterval(id);
+    }, 1000);
+  })();
+</script>

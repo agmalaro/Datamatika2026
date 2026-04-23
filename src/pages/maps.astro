@@ -1,0 +1,103 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { getSiteData } from "../data/site";
+
+const { siteMeta } = getSiteData();
+const rawMapsUrl = siteMeta.mapsEmbedUrl?.trim() || "";
+const mapsAddress = siteMeta.mapsAddress?.trim() || "Lokasi venue belum diatur.";
+
+function buildMapsUrls(input: string) {
+  if (!input) return { embedUrl: "", externalUrl: "" };
+  let normalized = input.trim();
+
+  // Allow users to paste full iframe embed code from Google Maps.
+  if (normalized.includes("<iframe")) {
+    const srcMatch = normalized.match(/src=["']([^"']+)["']/i);
+    if (srcMatch && srcMatch[1]) {
+      normalized = srcMatch[1].trim();
+    }
+  }
+
+  // Already embed-ready URL.
+  if (normalized.includes("/maps/embed") || normalized.includes("output=embed")) {
+    return { embedUrl: normalized, externalUrl: normalized };
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    const href = parsed.toString();
+
+    // Try to extract coordinates from common Google Maps URL formats.
+    const atMatch = href.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+    if (atMatch) {
+      const q = `${atMatch[1]},${atMatch[2]}`;
+      return {
+        embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`,
+        externalUrl: href,
+      };
+    }
+
+    const latLngMatch = href.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+    if (latLngMatch) {
+      const q = `${latLngMatch[1]},${latLngMatch[2]}`;
+      return {
+        embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`,
+        externalUrl: href,
+      };
+    }
+
+    // Fallback: use URL as search query for embeddable maps.
+    return {
+      embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(href)}&output=embed`,
+      externalUrl: href,
+    };
+  } catch {
+    // If it's plain text (address), still try to embed via query.
+    return {
+      embedUrl: `https://www.google.com/maps?q=${encodeURIComponent(normalized)}&output=embed`,
+      externalUrl: "",
+    };
+  }
+}
+
+const { embedUrl, externalUrl } = buildMapsUrls(rawMapsUrl);
+---
+
+<BaseLayout title="Lokasi Venue | DATAMATIKA 2026">
+  <SiteHeader />
+  <main id="main">
+    <section class="section section--gallery-page">
+      <div class="wrap gallery-page">
+        <h1 class="heading-accent heading-accent--lg">Lokasi Venue</h1>
+        <p class="gallery-empty">{mapsAddress}</p>
+        {
+          embedUrl ? (
+            <div class="maps-embed-wrap">
+              <iframe
+                title="Peta lokasi venue DATAMATIKA"
+                src={embedUrl}
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen
+              ></iframe>
+            </div>
+          ) : (
+            <p class="gallery-empty">Peta belum diatur di CMS admin.</p>
+          )
+        }
+        {
+          externalUrl && (
+            <div class="form-actions">
+              <a class="link btn-secondary" href={externalUrl} target="_blank" rel="noopener noreferrer"
+                >Buka di Google Maps</a
+              >
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

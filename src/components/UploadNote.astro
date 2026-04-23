@@ -1,0 +1,29 @@
+---
+import { getSiteData, images } from "../data/site";
+
+const { uploadNote } = getSiteData();
+---
+
+<section id="upload" class="section section--note" style={`--section-bg: url('${images.uploadBg}')`}>
+  <div class="section__bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="callout reveal">
+      <div class="callout__row">
+        <span class="callout__icon" aria-hidden="true">⬆️</span>
+        <div class="callout__body">
+          <h2 class="callout__title">{uploadNote.title}</h2>
+          <p class="callout__text">{uploadNote.body}</p>
+        </div>
+      </div>
+      <div class="callout__actions">
+        <a
+          class="btn btn--primary btn--sm"
+          href={uploadNote.primaryUrl}
+          target="_blank"
+          rel="noopener noreferrer">{uploadNote.primaryLabel}</a
+        >
+        <a class="btn btn--ghost btn--sm" href={uploadNote.secondaryUrl}>{uploadNote.secondaryLabel}</a>
+      </div>
+    </div>
+  </div>
+</section>

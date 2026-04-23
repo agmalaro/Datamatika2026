@@ -1,0 +1,113 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { getSiteData } from "../data/site";
+
+const { agenda } = getSiteData();
+---
+
+<BaseLayout title="Agenda Seminar | DATAMATIKA 2026">
+  <SiteHeader />
+  <main id="main">
+    <section class="section section--gallery-page">
+      <div class="wrap agenda-page">
+        <h1 class="heading-accent heading-accent--lg">{agenda.title}</h1>
+        <p class="agenda-intro">{agenda.intro}</p>
+        {
+          agenda.items.length > 0 ? (
+            <div class="agenda-table-wrap">
+              <table class="agenda-table">
+                <thead>
+                  <tr>
+                    <th>Hari</th>
+                    <th>Waktu</th>
+                    <th>Agenda</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agenda.items.map((item, index) => {
+                    const prev = agenda.items[index - 1];
+                    const showDay = !prev || prev.day !== item.day;
+                    return (
+                      <tr>
+                        <td>{showDay ? item.day : ""}</td>
+                        <td>{item.time}</td>
+                        <td>
+                          <strong>{item.agenda}</strong>
+                          {item.detail ? <p class="agenda-detail">{item.detail}</p> : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p class="gallery-empty">Agenda belum diatur dari CMS.</p>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  .agenda-page {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .agenda-intro {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .agenda-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .agenda-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+  }
+
+  .agenda-table th,
+  .agenda-table td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 0.65rem 0.75rem;
+    vertical-align: top;
+    text-align: left;
+    font-size: 0.93rem;
+  }
+
+  .agenda-table th:last-child,
+  .agenda-table td:last-child {
+    border-right: 0;
+  }
+
+  .agenda-table thead th {
+    background: rgba(var(--brand-rgb), 0.1);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  .agenda-table tbody tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .agenda-detail {
+    margin: 0.22rem 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+</style>

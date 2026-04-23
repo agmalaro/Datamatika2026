@@ -1,0 +1,28 @@
+---
+import { getSiteData, images } from "../data/site";
+
+const { speakers } = getSiteData();
+---
+
+<section class="section section--speakers" style={`--section-bg: url('${images.speakersGridBg}')`}>
+  <div class="section__bg" aria-hidden="true"></div>
+  <div class="wrap cards">
+    {
+      speakers.map((s) => (
+        <article class="card card--tilt reveal">
+          <div class="card__media">
+            <img src={s.src} alt={`Foto ${s.title}`} width="480" height="360" loading="lazy" />
+          </div>
+          <p class="card__title">{s.title}</p>
+          {
+            s.href && (
+              <a class="card__link" href={s.href} target="_blank" rel="noopener noreferrer">
+                Lihat profil
+              </a>
+            )
+          }
+        </article>
+      ))
+    }
+  </div>
+</section>

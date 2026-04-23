@@ -1,0 +1,24 @@
+---
+import { getSiteData, images } from "../data/site";
+
+const { about, media } = getSiteData();
+---
+
+<section id="about" class="section section--split" style={`--section-bg: url('${images.aboutBg}')`}>
+  <div class="section__bg" aria-hidden="true"></div>
+  <div class="wrap split">
+    <div class="split__media reveal">
+      <img
+        src={media.aboutPhoto}
+        alt="Ilustrasi kegiatan seminar"
+        width="800"
+        height="600"
+        loading="lazy"
+      />
+    </div>
+    <div class="split__text reveal">
+      <h2 class="heading-accent">{about.heading}</h2>
+      <p class="lead">{about.body}</p>
+    </div>
+  </div>
+</section>

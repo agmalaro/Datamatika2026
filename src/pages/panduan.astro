@@ -1,0 +1,184 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { getSiteData, images } from "../data/site";
+
+const { siteMeta, uploadNote, guide } = getSiteData();
+const submitUrl = uploadNote.primaryUrl?.trim() || siteMeta.registrationUrl;
+const flowSteps = guide.flowSteps.length > 0 ? guide.flowSteps : ["Alur submit belum diatur dari CMS."];
+const flowImage = guide.flowImage?.trim() || images.logo;
+const templateUrl = guide.templateUrl?.trim() || "/files/Template-Seminar-Nasional-2026.docx";
+const templateLabel = guide.templateLabel?.trim() || "Unduh Template Artikel (.docx)";
+---
+
+<BaseLayout title="Panduan Submit Artikel | DATAMATIKA 2026">
+  <SiteHeader />
+  <main id="main">
+    <section class="section section--gallery-page">
+      <div class="wrap panduan-page">
+        <h1 class="heading-accent heading-accent--lg">Panduan Submit Artikel Seminar</h1>
+        <p class="panduan-intro">
+          Halaman ini berisi panduan penulisan dan pengumpulan artikel untuk Seminar Nasional DATAMATIKA 2026,
+          termasuk checklist submit, alur pendaftaran, template artikel, dan informasi biaya pendaftaran.
+        </p>
+
+        <article class="panduan-card">
+          <h2>Panduan Penulis</h2>
+          <p>
+            Penulis diundang untuk mengirimkan naskah ke prosiding ini. Setiap naskah akan ditinjau terlebih dahulu
+            oleh editor untuk memastikan kesesuaian dengan fokus dan ruang lingkup seminar. Naskah yang dinilai sesuai
+            akan dilanjutkan ke proses peer review sebelum diputuskan diterima atau ditolak.
+          </p>
+          <p>
+            Sebelum mengirim naskah, penulis bertanggung jawab memperoleh izin untuk mempublikasikan semua materi yang
+            disertakan (misalnya foto, dokumen, atau dataset). Semua penulis yang dicantumkan wajib menyetujui
+            pencantuman namanya sebagai penulis. Jika diperlukan, penelitian harus telah mendapatkan persetujuan dari
+            komite etik yang berwenang sesuai ketentuan hukum negara tempat penelitian dilakukan.
+          </p>
+          <p>
+            Editor dapat menolak naskah pada tahap awal (desk reject) jika tidak memenuhi standar mutu minimum.
+            Pastikan rancangan studi dan argumen penelitian disusun serta dijelaskan dengan baik. Judul harus ringkas,
+            dan abstrak harus mampu berdiri sendiri. Hal ini meningkatkan peluang naskah disetujui reviewer untuk
+            ditelaah.
+          </p>
+        </article>
+
+        <article class="panduan-card">
+          <h2>Checklist Persiapan Submit</h2>
+          <p>Semua pengiriman naskah wajib memenuhi persyaratan berikut:</p>
+          <ul>
+            <li>Naskah telah memenuhi ketentuan dalam Panduan Penulis.</li>
+            <li>Naskah belum pernah dipublikasikan dan tidak sedang diajukan ke jurnal/prosiding lain.</li>
+            <li>Seluruh referensi telah diperiksa akurasi dan kelengkapannya.</li>
+            <li>Semua tabel dan gambar telah diberi nomor serta label yang jelas.</li>
+            <li>Izin publikasi untuk foto, dataset, atau materi pendukung lainnya telah diperoleh.</li>
+          </ul>
+        </article>
+
+        <article class="panduan-card">
+          <h2>Pernyataan Privasi</h2>
+          <p>
+            Nama dan alamat email yang dimasukkan pada situs ini hanya digunakan untuk kebutuhan Konferensi/Prosiding
+            DATAMATIKA 2026 dan tidak akan digunakan untuk tujuan lain maupun dibagikan ke pihak lain.
+          </p>
+        </article>
+
+        <article class="panduan-card panduan-grid">
+          <div>
+            <h2>{guide.flowTitle}</h2>
+            <ol>
+              {flowSteps.map((step) => <li>{step}</li>)}
+            </ol>
+            <div class="form-actions">
+              <a class="link btn-secondary" href={submitUrl} target="_blank" rel="noopener noreferrer">Buka Halaman Submit</a>
+            </div>
+          </div>
+          <figure class="panduan-figure">
+            <img src={flowImage} alt="Ilustrasi alur submit DATAMATIKA" loading="lazy" decoding="async" />
+            <figcaption>Ilustrasi alur submit artikel seminar.</figcaption>
+          </figure>
+        </article>
+
+        <article class="panduan-card">
+          <h2>Unduh Template Artikel</h2>
+          <p>Gunakan template resmi berikut sebelum melakukan submit naskah.</p>
+          <div class="form-actions">
+            <a class="link btn-secondary" href={templateUrl} download>{templateLabel}</a>
+          </div>
+        </article>
+
+        <article class="panduan-card panduan-card--free">
+          <h2>Biaya Pendaftaran Seminar</h2>
+          {
+            guide.fee.type === "paid" ? (
+              <>
+                <p>
+                  <strong>Biaya:</strong> {guide.fee.paidAmount}
+                </p>
+                <p>
+                  <strong>Rekening Tujuan:</strong> {guide.fee.paidAccountNumber} a.n. {guide.fee.paidAccountName}
+                </p>
+              </>
+            ) : (
+              <p>
+                <strong>{guide.fee.freeText}</strong>
+              </p>
+            )
+          }
+        </article>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  .panduan-page {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .panduan-intro {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .panduan-card {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.84);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .panduan-card h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .panduan-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .panduan-card ul,
+  .panduan-card ol {
+    margin: 0.5rem 0 0 1.1rem;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .panduan-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    align-items: center;
+  }
+
+  .panduan-figure {
+    margin: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    text-align: center;
+  }
+
+  .panduan-figure img {
+    width: min(100%, 360px);
+    height: auto;
+    object-fit: contain;
+  }
+
+  .panduan-figure figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .panduan-card--free {
+    border-color: rgba(var(--brand-rgb), 0.35);
+    background: rgba(var(--brand-rgb), 0.08);
+  }
+</style>

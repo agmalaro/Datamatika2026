@@ -1,0 +1,148 @@
+---
+import { getSiteData, images } from "../data/site";
+
+const { footerPartners } = getSiteData();
+
+const aboutAddress =
+  "CPVJ+7C2 Kampus IPB, Jl. Meranti, Babakan, Dramaga, Bogor Regency, West Java 16680";
+const phones = [
+  { name: "Enon", tel: "+6281311679203", display: "0813-1167-9203" },
+  { name: "Ridwan", tel: "+6281288337997", display: "0812-8833-7997" },
+  { name: "Jimly", tel: "+628974472085", display: "0897-4472-085" },
+] as const;
+
+const programLinks = [
+  { label: "Statistika", href: "https://stat.ipb.ac.id/" },
+  { label: "Matematika", href: "https://math.ipb.ac.id/" },
+  { label: "Ilmu Komputer", href: "https://cs.ipb.ac.id/" },
+  { label: "Aktuaria", href: "https://aktuaria.ipb.ac.id/" },
+  { label: "Kecerdasan Buatan", href: "https://ai.ipb.ac.id/" },
+] as const;
+
+/** Lebar piksel aset banner (600×110) — jangan di-upscale agar teks tetap tajam */
+const footerBannerWidth = 600;
+const footerBannerHeight = 110;
+---
+
+<footer class="site-footer">
+  <div class="footer-separator" aria-hidden="true"></div>
+  {
+    footerPartners.length > 0 && (
+      <div class="wrap footer-partners">
+        <h2 class="footer-partners__title">Partner pendukung</h2>
+        <ul class="footer-partners__grid">
+          {
+            footerPartners.map((p) => (
+              <li class="footer-partners__cell">
+                <div class="footer-partners__item">
+                  <img
+                    class="footer-partners__logo"
+                    src={p.src}
+                    alt={p.alt}
+                    width="140"
+                    height="70"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span class="footer-partners__divider" aria-hidden="true">|</span>
+                  <p class="footer-partners__name">{p.name}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    )
+  }
+
+  <section
+    id="contact"
+    class="footer-host"
+    aria-label="Kontak dan Sekolah Sains Data, Matematika, dan Informatika IPB"
+  >
+    <div class="footer-host__shell">
+      <div class="footer-host__grid">
+        <aside class="footer-host__about">
+          <h3 class="footer-host__heading">Hubungi kami</h3>
+          <ul class="footer-host__list">
+            <li class="footer-host__item">
+              <span class="footer-host__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M12 21s-7-4.35-7-10a7 7 0 1 1 14 0c0 5.65-7 10-7 10Z"></path>
+                  <circle cx="12" cy="11" r="2.5"></circle>
+                </svg>
+              </span>
+              <span>{aboutAddress}</span>
+            </li>
+            <li class="footer-host__item">
+              <span class="footer-host__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path
+                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.11a2 2 0 0 1 2.11-.45c.8.24 1.64.42 2.5.54A2 2 0 0 1 22 16.92Z"
+                  ></path>
+                </svg>
+              </span>
+              <span class="footer-host__phones">
+                {
+                  phones.map((p) => (
+                    <span class="footer-host__phone-line">
+                      <a class="footer-host__link" href={`tel:${p.tel}`}>
+                        {p.name} ({p.display})
+                      </a>
+                    </span>
+                  ))
+                }
+              </span>
+            </li>
+            <li class="footer-host__item">
+              <span class="footer-host__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+              </span>
+              <a class="footer-host__link" href="mailto:ssmi@apps.ipb.ac.id">ssmi@apps.ipb.ac.id</a>
+            </li>
+          </ul>
+        </aside>
+
+        <div class="footer-host__brand-panel">
+          <div class="footer-host__brand-content">
+            <p class="footer-host__panel-kicker">Program studi &amp; bidang</p>
+            <ul class="footer-host__tags" aria-label="Rumpun keilmuan SSMI">
+              {
+                programLinks.map((item) => (
+                  <li class="footer-host__tags-item">
+                    <a
+                      class="footer-host__tag-link"
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={item.label === "AI" ? "Kecerdasan Buatan" : undefined}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+            <div class="footer-host__banner-wrap">
+              <img
+                class="footer-host__brand-banner"
+                src={images.footerSsmiBanner}
+                alt="IPB University Bogor Indonesia; Sekolah Sains Data, Matematika, dan Informatika"
+                width={footerBannerWidth}
+                height={footerBannerHeight}
+                sizes={`(max-width: ${footerBannerWidth}px) 100vw, ${footerBannerWidth}px`}
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="footer-meta">© Copyright SSMI. IPB University, Bogor, Jawa Barat.</p>
+</footer>

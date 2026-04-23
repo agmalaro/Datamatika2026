@@ -1,0 +1,166 @@
+{
+  "siteMeta": {
+    "title": "DATAMATIKA SSMI IPB 2026",
+    "description": "Datamatika hadir kembali sebagai Seminar Nasional Sains Data, Matematika, dan Informatika yang diselenggarakan oleh SSMI. Seminar ini diharapkan dapat menjadi wadah bagi akademisi, peneliti, dan praktisi untuk berbagi ilmu, gagasan, serta inovasi di bidang sains data dan sekitarnya.",
+    "publishedUrl": "https://conference.ipb.ac.id/datamatika/about/submissions",
+    "registrationUrl": "https://conference.ipb.ac.id/datamatika/about/submissions",
+    "orgLine": "Seminar Nasional SSMI oleh IPB University",
+    "heroBg": "/uploads/hero/heroBg-1776879139344-lvzf1a.webp",
+    "heroLogo": "/uploads/speakers/heroLogo-1776879165259-2fx2lk.png",
+    "mapsAddress": "IPB University, Dramaga, Bogor, Jawa Barat",
+    "mapsEmbedUrl": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.726212274049!2d106.73105559999999!3d-6.5562064!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69c4ae5c36f429%3A0x9dda7767d80b7dff!2sGedung%20CCR%20(Common%20Class%20Room)!5e0!3m2!1sen!2sid!4v1776881111880!5m2!1sen!2sid\" width=\"600\" height=\"450\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"no-referrer-when-downgrade\"></iframe>",
+    "eventStartsAt": "2026-06-07T08:00",
+    "eventDateLabel": "7 Juni 2026"
+  },
+  "about": {
+    "heading": "Informasi Datamatika 2026",
+    "body": "Datamatika hadir kembali sebagai Seminar Nasional Sains Data, Matematika, dan Informatika yang diselenggarakan oleh SSMI. Menjadi wadah bagi akademisi, peneliti, dan praktisi untuk berbagi ilmu, gagasan, serta inovasi di bidang sains data dan sekitarnya. Tahun ini, Datamatika juga membuka kesempatan Call for Papers (Full Paper) dengan jadwal submission yang telah ditentukan. Ini saatnya kamu berkontribusi dan menunjukkan hasil penelitianmu. Jangan lewatkan kesempatan untuk menjadi bagian dari ruang kolaborasi dan inspirasi ini. Catat tanggalnya, siapkan paper terbaikmu, dan jadilah bagian dari Datamatika 2026. #SSMIInfo #Datamatika2026 #CallForPapers #SeminarNasional #SainsData #Matematika #Informatika",
+    "image": "/uploads/speakers/aboutImage-1776879981970-2rip18.jpg"
+  },
+  "timeline": [
+    {
+      "date": "1–18 Mei 2026",
+      "label": "Pendaftaran dan Submit Full Paper"
+    },
+    {
+      "date": "19–22 Mei 2026",
+      "label": "Review Paper"
+    },
+    {
+      "date": "23 Mei 2026",
+      "label": "Pengumuman Penerimaan (Acceptance)"
+    },
+    {
+      "date": "31 Mei 2026",
+      "label": "Deadline Revisi (Camera-Ready)"
+    },
+    {
+      "date": "6 Juni 2026",
+      "label": "Seminar Nasional SSMI 2026"
+    }
+  ],
+  "uploadNote": {
+    "title": "Call for Papers (Full Paper)",
+    "body": "Datamatika 2026 membuka submission full paper. Silakan kirim paper terbaikmu sesuai jadwal pendaftaran dan submit yang sudah diumumkan.",
+    "primaryLabel": "Submit full paper",
+    "primaryUrl": "https://conference.ipb.ac.id/datamatika/about/submissions",
+    "secondaryLabel": "Lihat Panduan Pendaftaran dan Pegajuan Artikel",
+    "secondaryUrl": "/panduan"
+  },
+  "timelineImage": "/uploads/speakers/timelineImage-1776879979611-5o2h15.jpg",
+  "speakers": [
+    {
+      "title": "Delil Khairat, S.Si., MBA.",
+      "href": "https://www.linkedin.com/in/delilkhairat/",
+      "image": "/uploads/speakers/speaker-1776882019287-qx7ewo.png"
+    },
+    {
+      "title": "Dr. Janry H.U.P. Simanungkalit, S.Si., M.Si.",
+      "href": "https://www.linkedin.com/in/janry-simanungkalit-68441928/",
+      "image": "/uploads/speakers/speaker-1776882103559-m2sd0d.png"
+    },
+    {
+      "title": "Prof. Dr. Ir. Khairil Anwar Notodiputro, M.S.",
+      "href": "https://www.linkedin.com/in/khairil-anwar-notodiputro-8253181a8/",
+      "image": "/uploads/speakers/speaker-1776882108196-q11k0u.png"
+    }
+  ],
+  "partners": [
+    {
+      "name": "IPB",
+      "image": "/uploads/speakers/partner-1776881860727-dxsvgn.jpg"
+    },
+    {
+      "name": "SSMI IPB University",
+      "image": "/uploads/speakers/partner-1776882283126-s3nb91.png"
+    },
+    {
+      "name": "BRIN",
+      "image": "/uploads/speakers/partner-1776882912316-rmqt1k.png"
+    }
+  ],
+  "gallery": [
+    {
+      "image": "/uploads/gallery/gallery-1776882151586-cb468c.jpg"
+    },
+    {
+      "image": "/uploads/gallery/gallery-1776882186049-av17pe.jpg"
+    },
+    {
+      "image": "/uploads/gallery/gallery-1776882196744-x400mi.jpg"
+    },
+    {
+      "caption": "KOIN IPB",
+      "image": "/uploads/gallery/gallery-1776882937671-qrwh58.jpg"
+    }
+  ],
+  "guide": {
+    "flowTitle": "Alur Pendaftaran & Submit",
+    "flowSteps": [
+      "Siapkan naskah sesuai template resmi DATAMATIKA 2026.",
+      "Pastikan seluruh checklist submit terpenuhi.",
+      "Daftar/masuk ke laman submit prosiding.",
+      "Unggah naskah, lengkapi metadata penulis, lalu kirim.",
+      "Tunggu proses review dan notifikasi hasil dari panitia/editor."
+    ],
+    "flowImage": "",
+    "templateLabel": "Unduh Template Artikel (.docx)",
+    "templateUrl": "/files/template-artikel-1776914484054-vtvd4e.docx",
+    "fee": {
+      "type": "free",
+      "freeText": "GRATIS dan tidak dipungut biaya. Ayo segera mendaftar yaa..",
+      "paidAmount": "150000",
+      "paidAccountNumber": "005235",
+      "paidAccountName": "Si FUlan"
+    }
+  },
+  "agenda": {
+    "title": "Agenda Seminar DATAMATIKA 2026",
+    "intro": "Jadwal acara seminar dapat berubah mengikuti pembaruan panitia.",
+    "items": [
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "08.00-08.20",
+        "agenda": "Opening & Speeches"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "08.20-09.20",
+        "agenda": "Keynote Speaker 1",
+        "detail": "Delil Khairat, S.Si., MBA. (PT Reasuransi Indonesia Utama (Persero))"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "09.20-09.40",
+        "agenda": "Coffee Break"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "09.40-10.40",
+        "agenda": "Keynote Speaker 2",
+        "detail": "Dr. Janry H.U.P. Simanungkalit, S.Si., M.Si.(Badan Kepegawaian Negara (BKN))"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "10.40-11.50",
+        "agenda": "Keynote Speaker 3",
+        "detail": "Prof. Dr. Ir. Khairil Anwar Notodiputro, M.S.(SSMI, IPB University)"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "11.50-12.10",
+        "agenda": "Sesi Group Photo"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "12.10-13.30",
+        "agenda": "Launch Break"
+      },
+      {
+        "day": "Sabtu, 6 Juni 2026",
+        "time": "13.30-16.30",
+        "agenda": "Sesi Paralel"
+      }
+    ]
+  }
+}
