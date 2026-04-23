@@ -1,7 +1,7 @@
 ---
 import { getSiteData, images } from "../data/site";
 
-const { uploadNote } = getSiteData();
+const { uploadNote } = await getSiteData();
 ---
 
 <section id="upload" class="section section--note" style={`--section-bg: url('${images.uploadBg}')`}>
@@ -27,3 +27,4 @@ const { uploadNote } = getSiteData();
     </div>
   </div>
 </section>
+

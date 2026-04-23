@@ -4,7 +4,7 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { getSiteData, images } from "../data/site";
 
-const { siteMeta, uploadNote, guide } = getSiteData();
+const { siteMeta, uploadNote, guide } = await getSiteData();
 const submitUrl = uploadNote.primaryUrl?.trim() || siteMeta.registrationUrl;
 const flowSteps = guide.flowSteps.length > 0 ? guide.flowSteps : ["Alur submit belum diatur dari CMS."];
 const flowImage = guide.flowImage?.trim() || images.logo;
@@ -182,3 +182,4 @@ const templateLabel = guide.templateLabel?.trim() || "Unduh Template Artikel (.d
     background: rgba(var(--brand-rgb), 0.08);
   }
 </style>
+

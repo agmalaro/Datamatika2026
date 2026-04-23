@@ -4,7 +4,7 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { getSiteData } from "../data/site";
 
-const { agenda } = getSiteData();
+const { agenda } = await getSiteData();
 ---
 
 <BaseLayout title="Agenda Seminar | DATAMATIKA 2026">
@@ -111,3 +111,4 @@ const { agenda } = getSiteData();
     line-height: 1.45;
   }
 </style>
+

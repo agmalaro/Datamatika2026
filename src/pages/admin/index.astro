@@ -7,7 +7,7 @@ if (!isAuthenticated(Astro.cookies)) {
   return Astro.redirect("/admin/login");
 }
 
-const content = getSiteContent();
+const content = await getSiteContent();
 const uploadNoteSecondaryUrl = normalizeSectionHashForSecondaryUrl(
   content.uploadNote.secondaryUrl,
   LANDING_SECTION_HASHES[0].value
@@ -1327,4 +1327,5 @@ const initialAgendaRows = (content.agenda.items || [])
     </script>
   </body>
 </html>
+
 

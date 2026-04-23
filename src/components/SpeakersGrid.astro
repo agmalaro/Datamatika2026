@@ -1,7 +1,7 @@
 ---
 import { getSiteData, images } from "../data/site";
 
-const { speakers } = getSiteData();
+const { speakers } = await getSiteData();
 ---
 
 <section class="section section--speakers" style={`--section-bg: url('${images.speakersGridBg}')`}>
@@ -26,3 +26,4 @@ const { speakers } = getSiteData();
     }
   </div>
 </section>
+

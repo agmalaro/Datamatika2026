@@ -31,8 +31,8 @@ export type Speaker = { src: string; title: string; href?: string };
 export type GalleryItem = { src: string; caption?: string };
 export type AgendaItem = { day: string; time: string; agenda: string; detail?: string };
 
-export function getSiteData() {
-  const content = getSiteContent();
+export async function getSiteData() {
+  const content = await getSiteContent();
   const footerPartners =
     content.partners.length > 0
       ? content.partners.map((partner) => ({

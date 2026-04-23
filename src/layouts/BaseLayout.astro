@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import { getSiteData } from "../data/site";
 
-const { siteMeta } = getSiteData();
+const { siteMeta } = await getSiteData();
 
 interface Props {
   title?: string;
@@ -175,5 +175,6 @@ const { title = siteMeta.title, description = siteMeta.description } = Astro.pro
     </script>
   </body>
 </html>
+
 
 

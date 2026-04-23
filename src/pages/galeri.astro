@@ -4,7 +4,7 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { getSiteData } from "../data/site";
 
-const { gallery } = getSiteData();
+const { gallery } = await getSiteData();
 ---
 
 <BaseLayout title="Galeri Seminar | DATAMATIKA 2026">
@@ -32,3 +32,4 @@ const { gallery } = getSiteData();
   </main>
   <SiteFooter />
 </BaseLayout>
+

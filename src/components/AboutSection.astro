@@ -1,7 +1,7 @@
 ---
 import { getSiteData, images } from "../data/site";
 
-const { about, media } = getSiteData();
+const { about, media } = await getSiteData();
 ---
 
 <section id="about" class="section section--split" style={`--section-bg: url('${images.aboutBg}')`}>
@@ -22,3 +22,4 @@ const { about, media } = getSiteData();
     </div>
   </div>
 </section>
+

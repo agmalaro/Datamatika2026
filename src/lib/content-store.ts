@@ -3,8 +3,10 @@ import { fileURLToPath } from "node:url";
 import { defaultSiteContent } from "../data/content.defaults";
 import type { SiteContent } from "../data/content.schema";
 import { normalizeSectionHashForSecondaryUrl } from "./section-anchors";
+import { getSupabaseServerClient, isSupabaseConfigured } from "./supabase-server";
 
 const CONTENT_FILE_PATH = fileURLToPath(new URL("../data/content.local.json", import.meta.url));
+const CONTENT_ROW_ID = "main";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -178,12 +180,54 @@ function sanitizeContent(value: unknown): SiteContent {
   };
 }
 
-export function getSiteContent(): SiteContent {
+async function readSupabaseContent(): Promise<SiteContent | null> {
+  const client = getSupabaseServerClient();
+  if (!client) return null;
+  const { data, error } = await client.from("site_content").select("payload").eq("id", CONTENT_ROW_ID).maybeSingle();
+  if (error) {
+    console.error("[content-store] readSupabaseContent", error);
+    return null;
+  }
+  return sanitizeContent(data?.payload ?? null);
+}
+
+async function saveSupabaseContent(content: SiteContent): Promise<SiteContent | null> {
+  const client = getSupabaseServerClient();
+  if (!client) return null;
+  const sanitized = sanitizeContent(content);
+  const { error } = await client.from("site_content").upsert(
+    {
+      id: CONTENT_ROW_ID,
+      payload: sanitized,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+  if (error) {
+    console.error("[content-store] saveSupabaseContent", error);
+    throw new Error("Gagal menyimpan konten ke Supabase.");
+  }
+  return sanitized;
+}
+
+export async function getSiteContent(): Promise<SiteContent> {
+  if (isSupabaseConfigured()) {
+    const fromSupabase = await readSupabaseContent();
+    if (fromSupabase) return fromSupabase;
+  }
   const local = readContentFile();
   return local ?? defaultSiteContent;
 }
 
-export function saveSiteContent(content: SiteContent): SiteContent {
+export async function saveSiteContent(content: SiteContent): Promise<SiteContent> {
+  if (isSupabaseConfigured()) {
+    const saved = await saveSupabaseContent(content);
+    if (saved) return saved;
+  }
+  const isHosted = Boolean(import.meta.env.NETLIFY) || import.meta.env.VERCEL === "1";
+  if (isHosted) {
+    throw new Error("Storage eksternal belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY.");
+  }
   const sanitized = sanitizeContent(content);
   const json = JSON.stringify(sanitized, null, 2);
   writeFileSync(CONTENT_FILE_PATH, `${json}\n`, "utf-8");

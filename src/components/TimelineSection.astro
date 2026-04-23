@@ -1,7 +1,7 @@
 ---
 import { getSiteData, images } from "../data/site";
 
-const { timeline, media } = getSiteData();
+const { timeline, media } = await getSiteData();
 ---
 
 <section
@@ -35,3 +35,4 @@ const { timeline, media } = getSiteData();
     </div>
   </div>
 </section>
+

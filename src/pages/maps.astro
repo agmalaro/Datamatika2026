@@ -4,7 +4,7 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { getSiteData } from "../data/site";
 
-const { siteMeta } = getSiteData();
+const { siteMeta } = await getSiteData();
 const rawMapsUrl = siteMeta.mapsEmbedUrl?.trim() || "";
 const mapsAddress = siteMeta.mapsAddress?.trim() || "Lokasi venue belum diatur.";
 
@@ -101,3 +101,4 @@ const { embedUrl, externalUrl } = buildMapsUrls(rawMapsUrl);
   </main>
   <SiteFooter />
 </BaseLayout>
+

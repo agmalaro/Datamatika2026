@@ -4,7 +4,6 @@ import { getSiteContent, saveSiteContent } from "../../../lib/content-store";
 import type { SiteContent } from "../../../data/content.schema";
 
 export const prerender = false;
-const isReadonlyHosting = Boolean(import.meta.env.NETLIFY) || import.meta.env.VERCEL === "1";
 
 function unauthorized() {
   return new Response(JSON.stringify({ message: "Unauthorized" }), {
@@ -15,7 +14,8 @@ function unauthorized() {
 
 export const GET: APIRoute = async ({ cookies }) => {
   if (!isAuthenticated(cookies)) return unauthorized();
-  return new Response(JSON.stringify(getSiteContent()), {
+  const content = await getSiteContent();
+  return new Response(JSON.stringify(content), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
@@ -23,19 +23,6 @@ export const GET: APIRoute = async ({ cookies }) => {
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   if (!isAuthenticated(cookies)) return unauthorized();
-
-  if (isReadonlyHosting) {
-    return new Response(
-      JSON.stringify({
-        message:
-          "Mode hosting ini read-only. Simpan CMS nonaktif di production Netlify/Vercel tanpa storage eksternal.",
-      }),
-      {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
 
   let payload: SiteContent;
   try {
@@ -48,7 +35,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   try {
-    const saved = saveSiteContent(payload);
+    const saved = await saveSiteContent(payload);
     return new Response(JSON.stringify(saved), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -57,7 +44,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     console.error("[api/admin/content]", err);
     return new Response(
       JSON.stringify({
-        message: "Gagal menyimpan konten ke filesystem server. Gunakan storage eksternal untuk production.",
+        message: "Gagal menyimpan konten. Periksa konfigurasi Supabase (URL/key/tabel) atau storage lokal.",
       }),
       {
         status: 500,
