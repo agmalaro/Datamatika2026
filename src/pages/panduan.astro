@@ -164,18 +164,21 @@ const templateLabel = guide.templateLabel?.trim() || "Unduh Template Artikel (.d
     background: #fff;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    padding: 0.75rem;
+    padding: 1.5rem;
     text-align: center;
+    overflow: hidden;
   }
 
   .panduan-figure img {
     width: min(100%, 360px);
     height: auto;
-    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    border-radius: var(--radius-sm);
   }
 
   .panduan-figure figcaption {
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
     font-size: 0.85rem;
     color: var(--muted);
   }

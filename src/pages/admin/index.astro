@@ -21,8 +21,14 @@ const initialGallery = content.gallery.length > 0 ? content.gallery : [{ caption
 
 function toDateInputValue(value: string): string {
   if (!value) return "";
-  const fromIso = new Date(value);
-  if (!Number.isNaN(fromIso.getTime())) return fromIso.toISOString().slice(0, 10);
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const yyyy = parsed.getFullYear();
+    const mm = pad(parsed.getMonth() + 1);
+    const dd = pad(parsed.getDate());
+    return `${yyyy}-${mm}-${dd}`;
+  }
   const ymdMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
   return ymdMatch ? ymdMatch[0] : "";
 }
@@ -79,391 +85,624 @@ const initialAgendaRows = (content.agenda.items || [])
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Admin Panel | DATAMATIKA 2026</title>
     <style>
-      body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f7f4f1; color: #1f1f1f; }
-      .shell { max-width: 980px; margin: 0 auto; padding: 1rem; }
-      .topbar { display: flex; gap: .7rem; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-      h1 { margin: 0; font-size: 1.3rem; color: #9a3a00; }
-      .actions { display: flex; gap: .5rem; }
-      .form-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-      .speaker-item { border: 1px solid #ead8cb; border-radius: 10px; padding: .85rem; background: #fffdfa; margin-bottom: .8rem; }
-      .speaker-item h3 { margin: 0 0 .6rem; font-size: .95rem; color: #7f3605; }
-      .speaker-preview {
-        display: block;
-        width: min(100%, 200px);
-        max-width: 200px;
-        height: 140px;
-        max-height: 140px;
-        border-radius: 10px;
-        border: 1px solid #d8c8bc;
-        object-fit: contain;
-        aspect-ratio: 10 / 7;
-        background: #f5efea;
+      :root {
+        --brand: #c04800;
+        --brand-dark: #9a3a00;
+        --cream: #f9ede5;
+        --ink: #1a1a1a;
+        --muted: #5c5c5c;
+        --white: #ffffff;
+        --line: rgba(0, 0, 0, 0.08);
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        --radius: 20px;
+        --header-h: 70px;
+        --sidebar-w: 240px;
       }
-      .speaker-item .speaker-preview {
-        width: 200px !important;
-        max-width: 200px !important;
-        height: 140px !important;
-        max-height: 140px !important;
-        object-fit: contain !important;
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: var(--cream);
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)),
+          repeating-linear-gradient(
+            45deg,
+            rgba(192, 72, 0, 0.08) 0,
+            rgba(192, 72, 0, 0.08) 1px,
+            transparent 1px,
+            transparent 10px
+          ),
+          repeating-linear-gradient(
+            -45deg,
+            rgba(192, 72, 0, 0.06) 0,
+            rgba(192, 72, 0, 0.06) 1px,
+            transparent 1px,
+            transparent 10px
+          );
+        background-size: auto, 98px 98px, 98px 98px;
+        background-repeat: repeat, repeat, repeat;
+        color: var(--ink);
+        overflow-x: hidden;
       }
-      img.speaker-preview {
-        width: 200px !important;
-        max-width: 200px !important;
-        height: 140px !important;
-        max-height: 140px !important;
-        object-fit: contain !important;
-      }
-      .speaker-actions { display: flex; gap: .45rem; flex-wrap: wrap; margin-top: .5rem; }
-      .save-progress { height: 8px; border-radius: 999px; background: #ecd8ca; overflow: hidden; margin: 0 0 .8rem; display: none; }
-      .save-progress.is-loading { display: block; }
-      .save-progress__bar { height: 100%; width: 35%; background: linear-gradient(90deg, #c04800, #f7843f); animation: save-bar 1s linear infinite; }
-      .meta-note { margin: 0 0 .6rem; font-size: .82rem; color: #666; }
-      #guide-fee-free-group,
-      #guide-fee-paid-group {
-        display: grid;
-        gap: .8rem;
-      }
-      .is-hidden {
-        display: none !important;
-      }
-      .photo-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 0.4rem;
-      }
-      .photo-grid .speaker-item {
-        margin-bottom: 0;
+
+      /* Layout */
+      .layout {
         display: flex;
-        flex-direction: column;
-        min-width: 0;
+        min-height: 100vh;
       }
-      .photo-grid .speaker-item h3 { font-size: 0.88rem; }
-      .photo-grid .speaker-item .speaker-preview,
-      .photo-grid .speaker-item img.speaker-preview {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto !important;
-        min-height: 0;
-        max-height: 160px;
-        aspect-ratio: 4 / 3;
-        object-fit: contain;
-      }
-      .admin-accordion { margin: 0; }
-      .admin-accordion__summary {
-        list-style: none;
+
+      /* Header */
+      .header {
+        position: fixed;
+        top: 0; right: 0; left: 0;
+        height: var(--header-h);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 0.5rem;
-        cursor: pointer;
-        user-select: none;
-        font-size: 1.02rem;
-        font-weight: 650;
-        margin: 0 0 0.65rem;
-        color: #1f1f1f;
+        padding: 0 1.5rem;
+        z-index: 100;
       }
-      .admin-accordion__summary::-webkit-details-marker { display: none; }
-      .admin-accordion[open] .admin-accordion__summary { margin-bottom: 0.5rem; }
-      .admin-accordion__chev { flex-shrink: 0; display: inline-block; transition: transform 0.18s ease; color: #9a3a00; font-size: 0.75em; }
-      .admin-accordion[open] .admin-accordion__chev { transform: rotate(180deg); }
-      .admin-accordion__content { margin-top: 0; }
-      .password-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-      @keyframes save-bar { from { transform: translateX(-120%); } to { transform: translateX(360%); } }
-      button, .link { border: 0; border-radius: 10px; padding: .62rem .9rem; font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; }
-      .btn-primary { background: #c04800; color: #fff; }
-      .btn-secondary { background: #fff; color: #333; border: 1px solid #d5c3b5; }
-      .grid { display: grid; gap: 1rem; }
-      .card { background: #fff; border: 1px solid #ece2d8; border-radius: 14px; padding: 1rem; }
-      .card h2 { margin: 0 0 .85rem; font-size: 1.02rem; }
-      .fields { display: grid; gap: .8rem; }
-      label { display: grid; gap: .35rem; font-size: .9rem; }
-      input, textarea { width: 100%; padding: .62rem .68rem; border: 1px solid #d8c8bc; border-radius: 10px; font: inherit; }
-      textarea { min-height: 110px; resize: vertical; }
-      .muted { color: #666; font-size: .85rem; margin: .35rem 0 0; }
-      #status { min-height: 1rem; font-size: .9rem; margin: 0 0 .8rem; }
-      .ok { color: #1d7a1d; }
-      .err { color: #b42020; }
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+      }
+
+      .header-logo { height: 32px; width: auto; }
+      .header-title { font-weight: 800; font-size: 1.1rem; color: var(--brand-dark); letter-spacing: -0.02em; margin: 0; }
+
+      .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+      .menu-toggle {
+        display: none !important;
+        background: none;
+        border: none;
+        color: var(--brand);
+        font-size: 1.6rem;
+        cursor: pointer;
+        padding: 0.4rem;
+        line-height: 1;
+        transition: color 0.2s;
+      }
+      .menu-toggle:hover { color: var(--brand-dark); }
+
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-w);
+        height: calc(100vh - var(--header-h));
+        position: fixed;
+        top: var(--header-h);
+        left: 0;
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(10px);
+        padding: 2rem 1rem;
+        overflow-y: auto;
+        border-right: 1px solid var(--line);
+        transition: transform 0.3s ease;
+        z-index: 90;
+      }
+
+      .sidebar-nav { display: flex; flex-direction: column; gap: 0.35rem; }
+      .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .sidebar-link:hover { background: rgba(192, 72, 0, 0.05); color: var(--brand); }
+      .sidebar-link.active { background: var(--brand); color: var(--white); }
+
+      /* Main Content */
+      .main {
+        flex: 1;
+        margin-left: var(--sidebar-w);
+        margin-top: var(--header-h);
+        padding: 2rem;
+        min-height: calc(100vh - var(--header-h));
+      }
+
+      #admin-form {
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* Components */
+      .card {
+        background: var(--white);
+        border-radius: var(--radius);
+        padding: 1.5rem 2rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--line);
+        margin-bottom: 1.5rem;
+        scroll-margin-top: calc(var(--header-h) + 1rem);
+      }
+
+      .card h2 {
+        margin: 0 0 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--brand-dark);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .card h2::before {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 1.25rem;
+        background: var(--brand);
+        border-radius: 4px;
+      }
+
+      .fields { display: grid; gap: 1.25rem; }
+      .grid { display: grid; }
+      label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--ink); }
+      
+      input, textarea, select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        font-family: inherit;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: #fcfdfd;
+      }
+
+      input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: var(--brand);
+        background: var(--white);
+        box-shadow: 0 0 0 4px rgba(192, 72, 0, 0.1);
+      }
+
+      textarea { min-height: 120px; resize: vertical; }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        text-decoration: none;
+      }
+
+      .btn-primary { background: var(--brand); color: var(--white); }
+      .btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 8px 15px rgba(192, 72, 0, 0.2); }
+      .btn-secondary { background: #f1f5f9; color: var(--ink); border: 1.5px solid #e2e8f0; }
+      .btn-secondary:hover { background: #e2e8f0; }
+      .btn-danger { background: #fee2e2; color: #b91c1c; }
+      .btn-danger:hover { background: #fecaca; }
+
+      .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+      /* Speaker/Partner/Gallery List */
+      .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .speaker-item {
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .speaker-preview {
+        width: 100%;
+        height: 180px;
+        border-radius: 12px;
+        object-fit: contain;
+        background: #fff;
+        border: 1px solid var(--line);
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .speaker-preview:hover { transform: scale(1.02); border-color: var(--brand); }
+
+      .speaker-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+      .speaker-actions input[type="file"] { display: none; }
+
+      /* Progress Bar */
+      .save-progress {
+        position: fixed;
+        top: var(--header-h);
+        left: 0; right: 0;
+        height: 4px;
+        background: rgba(0,0,0,0.05);
+        z-index: 101;
+        display: none;
+      }
+      .save-progress.is-loading { display: block; }
+      .save-progress__bar {
+        height: 100%;
+        background: var(--brand);
+        width: 40%;
+        animation: progress-slide 1.5s infinite ease-in-out;
+      }
+      @keyframes progress-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
+
+      /* Toast */
       .toast {
         position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1100;
-        min-width: min(88vw, 340px);
-        padding: .75rem .9rem;
-        border-radius: 10px;
-        color: #fff;
-        background: #374151;
-        box-shadow: 0 14px 40px rgba(0, 0, 0, .18);
-        transform: translateY(-8px);
+        bottom: 2rem;
+        right: 2rem;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        background: #334155;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        z-index: 1000;
+        transform: translateY(100px);
         opacity: 0;
-        pointer-events: none;
-        transition: opacity .2s ease, transform .2s ease;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
-      .toast.is-visible { opacity: 1; transform: translateY(0); }
-      .toast--loading { background: #9a3a00; }
-      .toast--ok { background: #176d17; }
-      .toast--err { background: #b91c1c; }
+      .toast.is-visible { transform: translateY(0); opacity: 1; }
+      .toast--ok { background: #059669; }
+      .toast--err { background: #dc2626; }
+      .toast--loading { background: var(--brand); }
+
+      .meta-note { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 0.5rem; display: block; }
+
+      .password-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+      .admin-accordion__summary {
+        list-style: none;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .admin-accordion__summary::-webkit-details-marker { display: none; }
+      .admin-accordion__chev { color: var(--brand); font-size: 0.8rem; transition: transform 0.2s; }
+      .admin-accordion[open] .admin-accordion__chev { transform: rotate(180deg); }
+
+      @media (max-width: 768px) {
+        .menu-toggle { display: block !important; }
+        .sidebar { 
+          transform: translateX(-100%); 
+          background: white;
+          width: 280px;
+          box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+        }
+        .sidebar.is-open { transform: translateX(0); }
+        .main { margin-left: 0; padding: 1.5rem 1rem; }
+        .header-title { display: none; }
+        .grid { grid-template-columns: 1fr !important; }
+      }
+      
+      .is-hidden { display: none !important; }
     </style>
   </head>
   <body>
-    <main class="shell">
-      <div class="topbar">
-        <h1>Admin DATAMATIKA 2026</h1>
-        <div class="actions">
-          <button class="btn-secondary" id="logout-btn" type="button">Logout</button>
-        </div>
+    <header class="header">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu">☰</button>
+        <a href="/admin" class="header-brand">
+          <img src="/favicon-32x32.png" alt="Logo" class="header-logo" />
+          <h1 class="header-title">ADMIN PANEL</h1>
+        </a>
       </div>
-      <div class="save-progress" id="save-progress" aria-hidden="true"><div class="save-progress__bar"></div></div>
-      <p id="status"></p>
-      <form id="admin-form" class="grid">
-        <section class="card">
-          <h2>Site Meta</h2>
-          <div class="fields">
-            <label>Title <input name="title" value={content.siteMeta.title} required /></label>
-            <label>Description <textarea name="description" required>{content.siteMeta.description}</textarea></label>
-            <label>Published URL <input name="publishedUrl" value={content.siteMeta.publishedUrl} required /></label>
-            <label>Registration URL <input name="registrationUrl" value={content.siteMeta.registrationUrl} required /></label>
-            <label>Organization Line <input name="orgLine" value={content.siteMeta.orgLine} required /></label>
-            <label>Alamat Venue (untuk halaman Maps)
-              <input name="mapsAddress" value={content.siteMeta.mapsAddress || ""} />
-            </label>
-            <label>Google Maps URL / Embed URL
-              <textarea name="mapsEmbedUrl" placeholder="Bisa tempel link Google Maps biasa, shortlink maps.app.goo.gl, atau URL embed">{content.siteMeta.mapsEmbedUrl || ""}</textarea>
-            </label>
-            <label>Hero Background (CMS)
-              <input id="hero-bg-url" name="heroBg" type="hidden" value={initialHeroBg} />
-              <img
-                id="hero-bg-preview"
-                class="speaker-preview"
-                src={initialHeroBg || "/patterns/empty.svg"}
-                alt="Preview hero background"
-                width="200"
-                height="140"
-                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
-              />
-              <div class="speaker-actions">
-                <input id="hero-bg-file" type="file" accept="image/png,image/jpeg,image/webp" />
-                <button class="btn-secondary" id="upload-hero-bg-btn" type="button">Upload Hero BG</button>
+      <div class="header-actions">
+        <a class="btn btn-secondary" href="/" target="_blank">View Site</a>
+        <button class="btn btn-danger" id="logout-btn">Logout</button>
+      </div>
+    </header>
+
+    <div class="save-progress" id="save-progress"><div class="save-progress__bar"></div></div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <a href="#section-meta" class="sidebar-link">Site Configuration</a>
+          <a href="#section-about" class="sidebar-link">About Section</a>
+          <a href="#section-timeline" class="sidebar-link">Timeline</a>
+          <a href="#section-papers" class="sidebar-link">Call for Papers</a>
+          <a href="#section-agenda" class="sidebar-link">Agenda Page</a>
+          <a href="#section-guide" class="sidebar-link">Guide Page</a>
+          <a href="#section-speakers" class="sidebar-link">Speakers</a>
+          <a href="#section-partners" class="sidebar-link">Partners</a>
+          <a href="#section-gallery" class="sidebar-link">Gallery</a>
+          <a href="#section-password" class="sidebar-link">Password</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <form id="admin-form">
+          <section class="card" id="section-meta">
+            <h2>Site Configuration</h2>
+            <div class="fields">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-group">
+                  <label>Title</label>
+                  <input name="title" value={content.siteMeta.title} required />
+                </div>
+                <div class="form-group">
+                  <label>Organization Line</label>
+                  <input name="orgLine" value={content.siteMeta.orgLine} required />
+                </div>
               </div>
-            </label>
-            <label>Hero Logo (CMS)
-              <input id="hero-logo-url" name="heroLogo" type="hidden" value={initialHeroLogo} />
-              <img
-                id="hero-logo-preview"
-                class="speaker-preview"
-                src={initialHeroLogo || "/patterns/empty.svg"}
-                alt="Preview hero logo"
-                width="200"
-                height="140"
-                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
-              />
-              <div class="speaker-actions">
-                <input id="hero-logo-file" type="file" accept="image/png,image/jpeg,image/webp" />
-                <button class="btn-secondary" id="upload-hero-logo-btn" type="button">Upload Hero Logo</button>
+              
+              <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" required>{content.siteMeta.description}</textarea>
               </div>
-            </label>
-            <label>Event Starts At <input type="datetime-local" name="eventStartsAt" value={initialEventStartsAt} required /></label>
-            <label>Event Date (otomatis dari Event Starts At)
-              <input id="event-date-preview" type="text" value={initialEventDateLabel} readonly />
-            </label>
-          </div>
-        </section>
 
-        <section class="card">
-          <h2>About Section</h2>
-          <div class="fields">
-            <label>Heading <input name="aboutHeading" value={content.about.heading} required /></label>
-            <label>Body <textarea name="aboutBody" required>{content.about.body}</textarea></label>
-            <label>Gambar Informasi
-              <input id="about-image-url" name="aboutImage" type="hidden" value={initialAboutImage} />
-              <img
-                id="about-image-preview"
-                class="speaker-preview"
-                src={initialAboutImage || "/patterns/empty.svg"}
-                alt="Preview gambar informasi"
-                width="200"
-                height="140"
-                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
-              />
-              <div class="speaker-actions">
-                <input id="about-image-file" type="file" accept="image/png,image/jpeg,image/webp" />
-                <button class="btn-secondary" id="upload-about-image-btn" type="button">Upload Gambar Informasi</button>
+              <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                <div class="form-group">
+                  <label>Registration URL</label>
+                  <input name="registrationUrl" value={content.siteMeta.registrationUrl} required />
+                </div>
+                <div class="form-group">
+                  <label>Published URL</label>
+                  <input name="publishedUrl" value={content.siteMeta.publishedUrl} required />
+                </div>
+                <div class="form-group">
+                  <label>Venue Address (for Maps)</label>
+                  <input name="mapsAddress" value={content.siteMeta.mapsAddress || ""} />
+                </div>
               </div>
-            </label>
-          </div>
-        </section>
 
-        <section class="card">
-          <h2>Timeline (1 item per baris, format: TANGGAL|LABEL)</h2>
-          <div class="fields">
-            <label>Gambar Timeline
-              <input id="timeline-image-url" name="timelineImage" type="hidden" value={initialTimelineImage} />
-              <img
-                id="timeline-image-preview"
-                class="speaker-preview"
-                src={initialTimelineImage || "/patterns/empty.svg"}
-                alt="Preview gambar timeline"
-                width="200"
-                height="140"
-                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
-              />
-              <div class="speaker-actions">
-                <input id="timeline-image-file" type="file" accept="image/png,image/jpeg,image/webp" />
-                <button class="btn-secondary" id="upload-timeline-image-btn" type="button">Upload Gambar Timeline</button>
+              <div class="form-group">
+                <label>Google Maps Embed URL</label>
+                <textarea name="mapsEmbedUrl" placeholder="Paste embed URL or Google Maps link" style="min-height: 80px;">{content.siteMeta.mapsEmbedUrl || ""}</textarea>
               </div>
-            </label>
-            <label>
-              Timeline
-              <textarea name="timeline" required>{content.timeline.map((item) => `${item.date}|${item.label}`).join("\n")}</textarea>
-            </label>
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>Call for Papers Section</h2>
-          <div class="fields">
-            <label>Judul <input name="uploadNoteTitle" value={content.uploadNote.title} required /></label>
-            <label>Deskripsi <textarea name="uploadNoteBody" required>{content.uploadNote.body}</textarea></label>
-            <label>Teks Tombol Utama <input name="uploadNotePrimaryLabel" value={content.uploadNote.primaryLabel} required /></label>
-            <label>URL Tombol Utama <input name="uploadNotePrimaryUrl" value={content.uploadNote.primaryUrl} required /></label>
-            <label>Teks Tombol Sekunder <input name="uploadNoteSecondaryLabel" value={content.uploadNote.secondaryLabel} required /></label>
-            <label>
-              Tujuan tombol sekunder (section/halaman)
-              <select name="uploadNoteSecondaryUrl" required>
-                {
-                  SECONDARY_URL_OPTIONS.map((o) => (
-                    <option value={o.value} selected={isKnownUploadNoteSecondary && uploadNoteSecondaryUrl === o.value}>
-                      {o.label} ({o.value})
-                    </option>
-                  ))
-                }
-                {
-                  !isKnownUploadNoteSecondary && uploadNoteSecondaryUrl ? (
-                    <option value={uploadNoteSecondaryUrl} selected>
-                      Tersimpan: {uploadNoteSecondaryUrl}
-                    </option>
-                  ) : null
-                }
-              </select>
-              <span class="meta-note">Pilih langsung untuk section landing (#...) atau halaman baru (/agenda, /maps, /galeri, /panduan).</span>
-            </label>
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>Halaman Agenda</h2>
-          <div class="fields">
-            <label>Judul Agenda <input name="agendaTitle" value={content.agenda.title} required /></label>
-            <label>Deskripsi singkat agenda <textarea name="agendaIntro" required>{content.agenda.intro}</textarea></label>
-            <label>
-              Data Tabel Agenda (format: HARI|WAKTU|AGENDA|DETAIL (opsional), 1 baris = 1 row)
-              <textarea name="agendaRows" required>{initialAgendaRows}</textarea>
-            </label>
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>Halaman Panduan</h2>
-          <div class="fields">
-            <label>Judul Alur Pendaftaran <input name="guideFlowTitle" value={content.guide.flowTitle} required /></label>
-            <label>
-              Alur Pendaftaran & Submit (1 langkah per baris)
-              <textarea name="guideFlowSteps" required>{initialGuideFlowSteps}</textarea>
-            </label>
-            <label>Gambar Ilustrasi Alur Submit
-              <input id="guide-flow-image-url" name="guideFlowImage" type="hidden" value={initialGuideFlowImage} />
-              <img
-                id="guide-flow-image-preview"
-                class="speaker-preview"
-                src={initialGuideFlowImage || "/patterns/empty.svg"}
-                alt="Preview ilustrasi panduan"
-                width="200"
-                height="140"
-                style="width:200px;max-width:200px;height:140px;max-height:140px;object-fit:contain;display:block;"
-              />
-              <div class="speaker-actions">
-                <input id="guide-flow-image-file" type="file" accept="image/png,image/jpeg,image/webp" />
-                <button class="btn-secondary" id="upload-guide-flow-image-btn" type="button">Upload Gambar Alur</button>
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="form-group">
+                  <label>Hero Background (CMS)</label>
+                  <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start;">
+                    <img id="hero-bg-preview" class="speaker-preview" src={initialHeroBg || "/patterns/empty.svg"} alt="Preview" style="height: 120px; width: 100%; object-fit: cover;" />
+                    <div class="speaker-actions" style="margin-top: 0;">
+                      <input id="hero-bg-url" name="heroBg" type="hidden" value={initialHeroBg} />
+                      <input id="hero-bg-file" type="file" accept="image/*" />
+                      <button class="btn btn-secondary" id="upload-hero-bg-btn" type="button" style="width: 100%; font-size: 0.8rem; padding: 0.6rem;">Upload Background</button>
+                      <p class="meta-note" style="margin-top: 0.5rem;">Recommended size: 1920x1080</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Hero Logo (CMS)</label>
+                  <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: start;">
+                    <img id="hero-logo-preview" class="speaker-preview" src={initialHeroLogo || "/patterns/empty.svg"} alt="Preview" style="height: 120px; width: 100%; object-fit: contain;" />
+                    <div class="speaker-actions" style="margin-top: 0;">
+                      <input id="hero-logo-url" name="heroLogo" type="hidden" value={initialHeroLogo} />
+                      <input id="hero-logo-file" type="file" accept="image/*" />
+                      <button class="btn btn-secondary" id="upload-hero-logo-btn" type="button" style="width: 100%; font-size: 0.8rem; padding: 0.6rem;">Upload Logo</button>
+                      <p class="meta-note" style="margin-top: 0.5rem;">Transparent PNG recommended</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </label>
-            <label>Teks Tombol Template <input name="guideTemplateLabel" value={content.guide.templateLabel} required /></label>
-            <label>File Template Artikel
-              <input id="guide-template-url" name="guideTemplateUrl" value={content.guide.templateUrl} required />
-              <div class="speaker-actions">
-                <input id="guide-template-file" type="file" accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" />
-                <button class="btn-secondary" id="upload-guide-template-btn" type="button">Upload Template</button>
-              </div>
-              <span class="meta-note">Format didukung: DOC, DOCX, PDF (maks 10MB).</span>
-            </label>
-            <label>Mode Biaya Seminar
-              <select id="guide-fee-type" name="guideFeeType" required>
-                <option value="free" selected={content.guide.fee.type === "free"}>Gratis</option>
-                <option value="paid" selected={content.guide.fee.type === "paid"}>Berbayar</option>
-              </select>
-            </label>
-            <div id="guide-fee-free-group">
-              <label>Teks biaya gratis <input name="guideFeeFreeText" value={content.guide.fee.freeText} /></label>
-            </div>
-            <div id="guide-fee-paid-group">
-              <label>Nominal biaya <input name="guideFeePaidAmount" value={content.guide.fee.paidAmount} placeholder="Contoh: Rp150.000" /></label>
-              <label>Nomor rekening <input name="guideFeePaidAccountNumber" value={content.guide.fee.paidAccountNumber} /></label>
-              <label>Nama pemilik rekening <input name="guideFeePaidAccountName" value={content.guide.fee.paidAccountName} /></label>
-            </div>
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>Speakers</h2>
-          <p class="meta-note">Upload foto speaker (JPG/PNG/WEBP, max 2MB), lalu simpan perubahan. Kartu tersusun grid.</p>
-          <div class="photo-grid" id="speakers-list"></div>
-          <div class="speaker-actions">
-            <button class="btn-secondary" id="add-speaker-btn" type="button">+ Tambah Speaker</button>
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>Partner Pendukung</h2>
-          <p class="meta-note">Isi nama dan upload logo partner. Jika kosong semua, section partner otomatis disembunyikan. Pratinjau per grid.</p>
-          <div class="photo-grid" id="partners-list"></div>
-          <div class="speaker-actions">
-            <button class="btn-secondary" id="add-partner-btn" type="button">+ Tambah Partner</button>
-          </div>
-        </section>
-
-        <section class="card" id="admin-gallery">
-          <details class="admin-accordion" open>
-            <summary class="admin-accordion__summary">Galeri Seminar <span class="admin-accordion__chev" aria-hidden="true">▼</span></summary>
-            <div class="admin-accordion__content">
-              <p class="meta-note">Upload maks 2MB per foto, lalu Simpan. Lipat panel ini (klik judul) bila mau perpendek halaman. Pratinjau per grid.</p>
-              <div class="photo-grid" id="gallery-list"></div>
-              <div class="speaker-actions">
-                <button class="btn-secondary" id="add-gallery-btn" type="button">+ Tambah Foto Galeri</button>
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; border-top: 1px solid var(--line); padding-top: 1.5rem;">
+                <div class="form-group">
+                  <label>Event Starts At</label>
+                  <input id="event-starts-at" type="datetime-local" name="eventStartsAt" value={initialEventStartsAt} required />
+                </div>
+                <div class="form-group">
+                  <label>Calculated Event Date (Auto)</label>
+                  <input id="event-date-preview" type="text" value={initialEventDateLabel} readonly style="background: #f1f5f9; cursor: not-allowed; border-color: #e2e8f0;" />
+                </div>
               </div>
             </div>
-          </details>
-        </section>
+          </section>
 
-        <section class="card">
-          <h2>Ubah Password Admin</h2>
-          <p class="meta-note">Jika `ADMIN_PASSWORD` ada di `.env`, ubah dari env (mode ini non-editable dari UI).</p>
-          <div class="password-grid">
-            <label>Password saat ini <input id="currentPassword" type="password" autocomplete="current-password" /></label>
-            <label>Password baru <input id="nextPassword" type="password" autocomplete="new-password" /></label>
-            <label>Konfirmasi password baru <input id="confirmPassword" type="password" autocomplete="new-password" /></label>
-          </div>
-          <div class="speaker-actions">
-            <button class="btn-secondary" id="change-password-btn" type="button">Update Password</button>
-          </div>
-        </section>
+          <section class="card" id="section-about">
+            <h2>About Section</h2>
+            <div class="fields">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                <div class="form-group">
+                  <label>Heading <input name="aboutHeading" value={content.about.heading} required /></label>
+                  <label style="margin-top: 1.25rem;">Body Text <textarea name="aboutBody" required style="min-height: 200px;">{content.about.body}</textarea></label>
+                </div>
+                <div class="form-group">
+                  <label>Information Image</label>
+                  <input id="about-image-url" name="aboutImage" type="hidden" value={initialAboutImage} />
+                  <img id="about-image-preview" class="speaker-preview" src={initialAboutImage || "/patterns/empty.svg"} alt="Preview" style="height: 300px; width: 100%;" />
+                  <div class="speaker-actions" style="margin-top: 0.75rem;">
+                    <input id="about-image-file" type="file" accept="image/*" />
+                    <button class="btn btn-secondary" id="upload-about-image-btn" type="button">Upload Image</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-        <div class="form-actions">
-          <button class="btn-primary" id="save-btn" type="submit">Simpan Perubahan</button>
-          <a class="link btn-secondary" href="/" target="_blank" rel="noopener noreferrer">Lihat Landing</a>
-        </div>
-      </form>
-    </main>
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+          <section class="card" id="section-timeline">
+            <h2>Timeline Management</h2>
+            <div class="fields">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                <div class="form-group">
+                  <label>Data Timeline (Format: DATE|LABEL)</label>
+                  <textarea name="timeline" required style="font-family: monospace; font-size: 0.9rem; min-height: 250px;">{content.timeline.map((item) => `${item.date}|${item.label}`).join("\n")}</textarea>
+                  <span class="meta-note">One item per line. Example: 24 April 2026|Registration Opens</span>
+                </div>
+                <div class="form-group">
+                  <label>Timeline Side Image</label>
+                  <input id="timeline-image-url" name="timelineImage" type="hidden" value={initialTimelineImage} />
+                  <img id="timeline-image-preview" class="speaker-preview" src={initialTimelineImage || "/patterns/empty.svg"} alt="Preview" style="height: 250px; width: 100%;" />
+                  <div class="speaker-actions" style="margin-top: 0.75rem;">
+                    <input id="timeline-image-file" type="file" accept="image/*" />
+                    <button class="btn btn-secondary" id="upload-timeline-image-btn" type="button">Upload Timeline Image</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" id="section-papers">
+            <h2>Call for Papers Section</h2>
+            <div class="fields">
+              <div class="grid" style="grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+                <label>Title <input name="uploadNoteTitle" value={content.uploadNote.title} required /></label>
+                <label>Description <textarea name="uploadNoteBody" required style="min-height: 80px;">{content.uploadNote.body}</textarea></label>
+              </div>
+              <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <label>Primary Button Label <input name="uploadNotePrimaryLabel" value={content.uploadNote.primaryLabel} required /></label>
+                <label>Primary Button URL <input name="uploadNotePrimaryUrl" value={content.uploadNote.primaryUrl} required /></label>
+                <label>Secondary Button Label <input name="uploadNoteSecondaryLabel" value={content.uploadNote.secondaryLabel} required /></label>
+                <label>Secondary Button Target
+                  <select name="uploadNoteSecondaryUrl" required>
+                    {SECONDARY_URL_OPTIONS.map((o) => (
+                      <option value={o.value} selected={isKnownUploadNoteSecondary && uploadNoteSecondaryUrl === o.value}>
+                        {o.label} ({o.value})
+                      </option>
+                    ))}
+                    {!isKnownUploadNoteSecondary && uploadNoteSecondaryUrl && (
+                      <option value={uploadNoteSecondaryUrl} selected>Custom: {uploadNoteSecondaryUrl}</option>
+                    )}
+                  </select>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" id="section-agenda">
+            <h2>Agenda Page</h2>
+            <div class="fields">
+              <label>Page Title <input name="agendaTitle" value={content.agenda.title} required /></label>
+              <label>Intro Text <textarea name="agendaIntro" required>{content.agenda.intro}</textarea></label>
+              <label>Agenda Table (Format: DAY|TIME|AGENDA|DETAIL)
+                <textarea name="agendaRows" required style="font-family: monospace; font-size: 0.9rem;">{initialAgendaRows}</textarea>
+                <span class="meta-note">One row per line. Detail is optional.</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="card" id="section-guide">
+            <h2>Guide & Fee Page</h2>
+            <div class="fields">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="form-group">
+                  <label>Registration Flow Title</label>
+                  <input name="guideFlowTitle" value={content.guide.flowTitle} required />
+                  <label style="margin-top: 1rem;">Flow Steps (One per line)</label>
+                  <textarea name="guideFlowSteps" required style="min-height: 150px;">{initialGuideFlowSteps}</textarea>
+                </div>
+                <div class="form-group">
+                  <label>Flow Illustration Image</label>
+                  <input id="guide-flow-image-url" name="guideFlowImage" type="hidden" value={initialGuideFlowImage} />
+                  <img id="guide-flow-image-preview" class="speaker-preview" src={initialGuideFlowImage || "/patterns/empty.svg"} alt="Preview" style="height: 200px;" />
+                  <div class="speaker-actions" style="margin-top: 0.75rem;">
+                    <input id="guide-flow-image-file" type="file" accept="image/*" />
+                    <button class="btn btn-secondary" id="upload-guide-flow-image-btn" type="button">Upload Flow Image</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; border-top: 1px solid var(--line); padding-top: 1.5rem; margin-top: 1rem;">
+                <div class="form-group">
+                  <label>Template Label</label>
+                  <input name="guideTemplateLabel" value={content.guide.templateLabel} required />
+                  <label style="margin-top: 1rem;">Article Template File</label>
+                  <input id="guide-template-url" name="guideTemplateUrl" value={content.guide.templateUrl} required />
+                  <div class="speaker-actions" style="margin-top: 0.5rem;">
+                    <input id="guide-template-file" type="file" accept=".doc,.docx,.pdf" />
+                    <button class="btn btn-secondary" id="upload-guide-template-btn" type="button">Upload Template</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Fee Configuration</label>
+                  <select id="guide-fee-type" name="guideFeeType" required>
+                    <option value="free" selected={content.guide.fee.type === "free"}>Free</option>
+                    <option value="paid" selected={content.guide.fee.type === "paid"}>Paid</option>
+                  </select>
+                  
+                  <div id="guide-fee-free-group" style="margin-top: 1rem;">
+                    <label>Free Note <input name="guideFeeFreeText" value={content.guide.fee.freeText} /></label>
+                  </div>
+                  <div id="guide-fee-paid-group" style="margin-top: 1rem;">
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                      <label>Amount <input name="guideFeePaidAmount" value={content.guide.fee.paidAmount} placeholder="e.g. Rp150.000" /></label>
+                      <label>Account Number <input name="guideFeePaidAccountNumber" value={content.guide.fee.paidAccountNumber} /></label>
+                    </div>
+                    <label style="margin-top: 0.5rem;">Account Holder Name <input name="guideFeePaidAccountName" value={content.guide.fee.paidAccountName} /></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" id="section-speakers">
+            <h2>Speakers</h2>
+            <p class="meta-note" style="margin-bottom: 1.5rem;">Upload image (JPG/PNG/WEBP, max 2MB), manage the speakers list. Images will be auto-fitted.</p>
+            <div class="photo-grid" id="speakers-list"></div>
+            <button class="btn btn-secondary" id="add-speaker-btn" type="button">+ Add Speaker</button>
+          </section>
+
+          <section class="card" id="section-partners">
+            <h2>Partners</h2>
+            <div class="photo-grid" id="partners-list"></div>
+            <button class="btn btn-secondary" id="add-partner-btn" type="button">+ Add Partner</button>
+          </section>
+
+          <section class="card" id="section-gallery">
+            <details class="admin-accordion" open>
+              <summary class="admin-accordion__summary">Gallery Images <span class="admin-accordion__chev">▼</span></summary>
+              <p class="meta-note">Upload image max 2MB</p>
+              <div style="padding-top: 1.5rem;">
+                <div class="photo-grid" id="gallery-list"></div>
+                <button class="btn btn-secondary" id="add-gallery-btn" type="button">+ Add Photo</button>
+              </div>
+            </details>
+          </section>
+
+          <section class="card" id="section-password">
+            <h2>Admin Password</h2>
+            <div class="password-grid">
+              <label>Current Password <input id="currentPassword" type="password" /></label>
+              <label>New Password <input id="nextPassword" type="password" /></label>
+              <label>Confirm New Password <input id="confirmPassword" type="password" /></label>
+            </div>
+            <div style="margin-top: 1.5rem;">
+              <button class="btn btn-secondary" id="change-password-btn" type="button">Update Password</button>
+            </div>
+          </section>
+
+          <div style="padding-bottom: 5rem;">
+            <button class="btn btn-primary" id="save-btn" type="submit" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border-radius: 16px;">
+              Simpan Perubahan
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
 
     <script
       is:inline
@@ -520,12 +759,48 @@ const initialAgendaRows = (content.agenda.items || [])
       const nextPasswordInput = document.getElementById("nextPassword");
       const confirmPasswordInput = document.getElementById("confirmPassword");
       const toast = document.getElementById("toast");
+      const menuToggle = document.getElementById("menu-toggle");
+      const sidebar = document.querySelector(".sidebar");
+      const sidebarLinks = document.querySelectorAll(".sidebar-link");
+      
       const eventStartsAtInput = form?.elements?.namedItem?.("eventStartsAt");
       const eventDatePreviewInput = document.getElementById("event-date-preview");
       const speakerSeeds = Array.isArray(initialSpeakers) ? initialSpeakers : [];
       const partnerSeeds = Array.isArray(initialPartners) ? initialPartners : [];
       const gallerySeeds = Array.isArray(initialGallery) ? initialGallery : [];
       let toastTimer = null;
+
+      // Sidebar logic
+      menuToggle?.addEventListener("click", () => {
+        sidebar?.classList.toggle("is-open");
+      });
+
+      sidebarLinks.forEach(link => {
+        link.addEventListener("click", () => {
+          sidebar?.classList.remove("is-open");
+          sidebarLinks.forEach(l => l.classList.remove("active"));
+          link.classList.add("active");
+        });
+      });
+
+      // Highlight active section on scroll
+      window.addEventListener("scroll", () => {
+        let current = "";
+        const sections = document.querySelectorAll("section.card");
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop;
+          if (pageYOffset >= sectionTop - 120) {
+            current = section.getAttribute("id");
+          }
+        });
+
+        sidebarLinks.forEach(link => {
+          link.classList.remove("active");
+          if (link.getAttribute("href") === `#${current}`) {
+            link.classList.add("active");
+          }
+        });
+      });
 
       function setStatus(message, type) {
         if (!status) return;
@@ -744,16 +1019,23 @@ const initialAgendaRows = (content.agenda.items || [])
       setGuideFlowImagePreview(initialGuideFlowImage);
       syncGuideFeeFields();
 
+      // Hero Image Click Triggers
+      heroBgPreview?.addEventListener("click", () => heroBgFileInput?.click());
+      heroLogoPreview?.addEventListener("click", () => heroLogoFileInput?.click());
+      aboutImagePreview?.addEventListener("click", () => aboutImageFileInput?.click());
+      timelineImagePreview?.addEventListener("click", () => timelineImageFileInput?.click());
+      guideFlowImagePreview?.addEventListener("click", () => guideFlowImageFileInput?.click());
+
       heroBgFileInput?.addEventListener("change", (event) => {
         const target = event.target;
         if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
         setHeroPreview(URL.createObjectURL(target.files[0]));
+        if (uploadHeroBgBtn) uploadHeroBgBtn.textContent = "Click to Upload Now";
       });
 
       uploadHeroBgBtn?.addEventListener("click", async () => {
         if (!(heroBgFileInput instanceof HTMLInputElement) || !heroBgFileInput.files?.length) {
-          setStatus("Pilih file Hero BG dulu sebelum upload.", "err");
-          showToast("Pilih file Hero BG dulu sebelum upload.", "err");
+          heroBgFileInput?.click();
           return;
         }
 
@@ -768,7 +1050,7 @@ const initialAgendaRows = (content.agenda.items || [])
           body: formData,
         });
         uploadHeroBgBtn.removeAttribute("disabled");
-        uploadHeroBgBtn.textContent = "Upload Hero BG";
+        uploadHeroBgBtn.textContent = "Upload Background";
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({ message: "Upload gagal." }));
@@ -788,12 +1070,12 @@ const initialAgendaRows = (content.agenda.items || [])
         const target = event.target;
         if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
         setHeroLogoPreview(URL.createObjectURL(target.files[0]));
+        if (uploadHeroLogoBtn) uploadHeroLogoBtn.textContent = "Click to Upload Now";
       });
 
       uploadHeroLogoBtn?.addEventListener("click", async () => {
         if (!(heroLogoFileInput instanceof HTMLInputElement) || !heroLogoFileInput.files?.length) {
-          setStatus("Pilih file Hero Logo dulu sebelum upload.", "err");
-          showToast("Pilih file Hero Logo dulu sebelum upload.", "err");
+          heroLogoFileInput?.click();
           return;
         }
 
@@ -808,7 +1090,7 @@ const initialAgendaRows = (content.agenda.items || [])
           body: formData,
         });
         uploadHeroLogoBtn.removeAttribute("disabled");
-        uploadHeroLogoBtn.textContent = "Upload Hero Logo";
+        uploadHeroLogoBtn.textContent = "Upload Logo";
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({ message: "Upload gagal." }));
@@ -828,12 +1110,12 @@ const initialAgendaRows = (content.agenda.items || [])
         const target = event.target;
         if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
         setAboutImagePreview(URL.createObjectURL(target.files[0]));
+        if (uploadAboutImageBtn) uploadAboutImageBtn.textContent = "Click to Upload Now";
       });
 
       uploadAboutImageBtn?.addEventListener("click", async () => {
         if (!(aboutImageFileInput instanceof HTMLInputElement) || !aboutImageFileInput.files?.length) {
-          setStatus("Pilih gambar Informasi dulu sebelum upload.", "err");
-          showToast("Pilih gambar Informasi dulu sebelum upload.", "err");
+          aboutImageFileInput?.click();
           return;
         }
 
@@ -848,7 +1130,7 @@ const initialAgendaRows = (content.agenda.items || [])
           body: formData,
         });
         uploadAboutImageBtn.removeAttribute("disabled");
-        uploadAboutImageBtn.textContent = "Upload Gambar Informasi";
+        uploadAboutImageBtn.textContent = "Upload Image";
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({ message: "Upload gagal." }));
