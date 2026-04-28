@@ -19,7 +19,9 @@
   --header-h: 64px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --font-sans: "Open Sans", system-ui, sans-serif;
-  --font-display: "Roboto", system-ui, sans-serif;
+  --font-display-plus: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-display-manrope: "Manrope", "Inter", system-ui, sans-serif;
+  --font-display: var(--font-display-plus);
   --font-ui: "Inter", system-ui, sans-serif;
 }
 

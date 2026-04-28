@@ -1,4 +1,9 @@
 ---
+import { isAuthenticated } from "../../lib/admin-auth";
+
+if (isAuthenticated(Astro.cookies)) {
+  return Astro.redirect("/admin");
+}
 ---
 
 <!doctype html>

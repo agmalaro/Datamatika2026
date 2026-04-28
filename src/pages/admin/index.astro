@@ -1,6 +1,11 @@
 ---
 import { getSiteContent } from "../../lib/content-store";
 import { LANDING_SECTION_HASHES, SECONDARY_URL_OPTIONS, normalizeSectionHashForSecondaryUrl } from "../../lib/section-anchors";
+import { isAuthenticated } from "../../lib/admin-auth";
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect("/admin/login");
+}
 
 const content = await getSiteContent();
 const uploadNoteSecondaryUrl = normalizeSectionHashForSecondaryUrl(
@@ -68,6 +73,9 @@ const initialGuideFlowImage = content.guide.flowImage?.trim() || "";
 const initialGuideFlowSteps = (content.guide.flowSteps || []).join("\n");
 const initialAgendaRows = (content.agenda.items || [])
   .map((item) => [item.day, item.time, item.agenda, item.detail || ""].join("|"))
+  .join("\n");
+const initialContactPhoneRows = (content.contact.phones || [])
+  .map((item) => [item.name, item.tel, item.display].join("|"))
   .join("\n");
 ---
 
@@ -414,6 +422,7 @@ const initialAgendaRows = (content.agenda.items || [])
         </a>
       </div>
       <div class="header-actions">
+        <button class="btn btn-primary" id="save-btn" type="submit" form="admin-form">Simpan Perubahan</button>
         <a class="btn btn-secondary" href="/" target="_blank">View Site</a>
         <button class="btn btn-danger" id="logout-btn">Logout</button>
       </div>
@@ -430,6 +439,7 @@ const initialAgendaRows = (content.agenda.items || [])
           <a href="#section-papers" class="sidebar-link">Call for Papers</a>
           <a href="#section-agenda" class="sidebar-link">Agenda Page</a>
           <a href="#section-guide" class="sidebar-link">Guide Page</a>
+          <a href="#section-contact" class="sidebar-link">Contact</a>
           <a href="#section-speakers" class="sidebar-link">Speakers</a>
           <a href="#section-partners" class="sidebar-link">Partners</a>
           <a href="#section-gallery" class="sidebar-link">Gallery</a>
@@ -652,6 +662,23 @@ const initialAgendaRows = (content.agenda.items || [])
             </div>
           </section>
 
+          <section class="card" id="section-contact">
+            <h2>Contact Section</h2>
+            <div class="fields">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <label>Heading <input name="contactHeading" value={content.contact.heading} required /></label>
+                <label>Email <input name="contactEmail" type="email" value={content.contact.email} required /></label>
+              </div>
+              <label>Address
+                <textarea name="contactAddress" required style="min-height: 90px;">{content.contact.address}</textarea>
+              </label>
+              <label>Phones (Format: NAME|TEL|DISPLAY)
+                <textarea name="contactPhones" required style="font-family: monospace; font-size: 0.9rem; min-height: 130px;">{initialContactPhoneRows}</textarea>
+                <span class="meta-note">One contact per line. Example: Enon|+6281311679203|0813-1167-9203</span>
+              </label>
+            </div>
+          </section>
+
           <section class="card" id="section-speakers">
             <h2>Speakers</h2>
             <p class="meta-note" style="margin-bottom: 1.5rem;">Upload image (JPG/PNG/WEBP, max 2MB), manage the speakers list. Images will be auto-fitted.</p>
@@ -688,11 +715,7 @@ const initialAgendaRows = (content.agenda.items || [])
             </div>
           </section>
 
-          <div style="padding-bottom: 5rem;">
-            <button class="btn btn-primary" id="save-btn" type="submit" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; border-radius: 16px;">
-              Simpan Perubahan
-            </button>
-          </div>
+          <div style="padding-bottom: 5rem;"></div>
         </form>
       </main>
     </div>
@@ -1472,6 +1495,17 @@ const initialAgendaRows = (content.agenda.items || [])
             ...(detail ? { detail } : {}),
           }))
           .filter((item) => item.day && item.time && item.agenda);
+        const contactPhones = form.contactPhones.value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.split("|").map((x) => x.trim()))
+          .map(([name, tel, display]) => ({
+            name: name ?? "",
+            tel: tel ?? "",
+            display: display ?? "",
+          }))
+          .filter((item) => item.name && item.tel && item.display);
 
         const speakers = readSpeakers();
         const partners = readPartners();
@@ -1504,6 +1538,12 @@ const initialAgendaRows = (content.agenda.items || [])
             primaryUrl: form.uploadNotePrimaryUrl.value,
             secondaryLabel: form.uploadNoteSecondaryLabel.value,
             secondaryUrl: form.uploadNoteSecondaryUrl.value,
+          },
+          contact: {
+            heading: form.contactHeading.value,
+            address: form.contactAddress.value,
+            phones: contactPhones,
+            email: form.contactEmail.value,
           },
           guide: {
             flowTitle: form.guideFlowTitle.value,

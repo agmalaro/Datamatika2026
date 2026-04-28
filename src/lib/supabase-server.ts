@@ -3,7 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 type SupabaseServerClient = ReturnType<typeof createClient>;
 
 function cleanEnv(name: string): string {
-  const value = import.meta.env[name];
+  const runtimeValue = typeof process !== "undefined" ? process.env[name] : undefined;
+  const value = runtimeValue ?? import.meta.env[name];
   return typeof value === "string" ? value.trim() : "";
 }
 

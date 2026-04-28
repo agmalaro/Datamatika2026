@@ -8,7 +8,8 @@ const MAX_AGE_SECONDS = 60 * 60 * 8;
 const ADMIN_FILE_PATH = fileURLToPath(new URL("../data/admin.local.json", import.meta.url));
 
 function credential(key: string, fallback: string): string {
-  const value = import.meta.env[key];
+  const runtimeValue = typeof process !== "undefined" ? process.env[key] : undefined;
+  const value = runtimeValue ?? import.meta.env[key];
   if (typeof value !== "string") return fallback;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : fallback;

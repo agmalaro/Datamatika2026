@@ -78,11 +78,25 @@ export type AgendaContent = {
   items: AgendaItemContent[];
 };
 
+export type ContactPhoneContent = {
+  name: string;
+  tel: string;
+  display: string;
+};
+
+export type ContactContent = {
+  heading: string;
+  address: string;
+  phones: ContactPhoneContent[];
+  email: string;
+};
+
 export type SiteContent = {
   siteMeta: SiteMetaContent;
   about: AboutContent;
   timeline: TimelineItemContent[];
   uploadNote: UploadNoteContent;
+  contact: ContactContent;
   guide: GuideContent;
   agenda: AgendaContent;
   timelineImage?: string;

@@ -35,6 +35,16 @@ export const defaultSiteContent: SiteContent = {
     secondaryLabel: "Kembali ke atas",
     secondaryUrl: "#beranda",
   },
+  contact: {
+    heading: "Hubungi kami",
+    address: "CPVJ+7C2 Kampus IPB, Jl. Meranti, Babakan, Dramaga, Bogor Regency, West Java 16680",
+    phones: [
+      { name: "Enon", tel: "+6281311679203", display: "0813-1167-9203" },
+      { name: "Ridwan", tel: "+6281288337997", display: "0812-8833-7997" },
+      { name: "Jimly", tel: "+628974472085", display: "0897-4472-085" },
+    ],
+    email: "ssmi@apps.ipb.ac.id",
+  },
   guide: {
     flowTitle: "Alur Pendaftaran & Submit",
     flowSteps: [

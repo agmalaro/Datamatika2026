@@ -1,91 +1,134 @@
-# seminar-datamatika-2026
-Landing Page Seminar Datamatika Tahun 2026.
+# DATAMATIKA 2026 (Astro SSR + Admin CMS)
 
-## Admin CMS Lokal (Pure Astro)
+Landing page dan admin CMS untuk DATAMATIKA 2026 dengan runtime Astro SSR (Node adapter) dan storage eksternal Supabase.
 
-Project ini sudah punya admin panel lokal berbasis Astro (tanpa CMS eksternal):
+## Fitur utama
 
-- Login admin: `/admin/login`
+- Admin login: `/admin/login`
 - Dashboard konten: `/admin`
 - API admin:
   - `POST /api/admin/login`
   - `POST /api/admin/logout`
   - `GET/POST /api/admin/content`
-  - `POST /api/admin/upload` (upload foto speaker)
-  - `POST /api/admin/password` (ubah password)
+  - `POST /api/admin/upload`
+  - `POST /api/admin/password`
+- Health endpoint untuk operasional: `GET /api/health`
 
-Konten tersimpan ke file lokal `src/data/content.local.json`.
-Password lokal (jika `ADMIN_PASSWORD` kosong) disimpan aman (hash) di `src/data/admin.local.json`.
+## Menjalankan lokal (tanpa Docker)
 
-## Menjalankan Project
+1. Salin `.env.example` menjadi `.env` lalu isi nilainya.
+2. Jalankan:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Konfigurasi Credential Admin
+## Menjalankan lokal via Docker Compose
 
-Buat file `.env` di root project:
-
-```env
-ADMIN_USERNAME=admin
-# Optional: jika diisi, password dikunci dari env (tidak bisa diubah dari dashboard)
-ADMIN_PASSWORD=
-ADMIN_SESSION_SECRET=ganti-dengan-secret-yang-kuat
-```
-
-Mode password:
-
-- **Mode env (locked):** isi `ADMIN_PASSWORD` -> ubah password lewat `.env`.
-- **Mode dashboard (flexible):** kosongkan `ADMIN_PASSWORD` -> bisa ubah password dari halaman admin.
-
-Jika belum ada data auth lokal, default login pertama tetap `admin / admin123`.
-
-## Static Deployment
-
-Project ini bisa dibuild sebagai output static untuk kebutuhan deploy ke shared hosting atau VPS static root.
-
-### Build Lokal
+1. Salin `.env.production.example` menjadi `.env.production`.
+2. Isi semua environment variable.
+3. Jalankan:
 
 ```bash
-npm install
-npm run build
+docker compose up -d --build
 ```
 
-Hasil build ada di folder `dist/`, termasuk:
-
-- `dist/index.html`
-- `dist/_astro/*` (asset JS/CSS hasil bundling)
-- file static lain dari `public/`
-
-### Deploy ke Shared Hosting / VPS Static Root
-
-1. Jalankan build (`npm run build`).
-2. Upload seluruh isi folder `dist/` ke document root hosting (contoh: `public_html` atau root Nginx static).
-3. Pastikan server mengarah ke `index.html` sebagai entry point.
-
-### GitHub Actions Artifact
-
-Workflow ada di `.github/workflows/static-build.yml` dan berjalan saat:
-
-- push ke branch `main`
-- trigger manual via `workflow_dispatch`
-
-Output workflow adalah artifact `dist-static` yang berisi hasil folder `dist` siap deploy.
-
-### Opsi Branch `build-output` (Manual)
-
-Gunakan branch khusus untuk menyimpan file hasil build static:
+4. Lihat log:
 
 ```bash
-# dari branch kerja setelah npm run build
-git checkout --orphan build-output
-git rm -rf .
-# copy seluruh isi dist/ ke root branch ini
-git add .
-git commit -m "chore(build): publish static dist output"
-git checkout chore/static-build-output
+docker compose logs -f app
 ```
 
-Catatan: mode static ditujukan untuk output halaman frontend. Endpoint server seperti `/api/admin/*` memerlukan runtime server/serverless dan tidak berjalan di hosting static murni.
+5. Stop:
+
+```bash
+docker compose down
+```
+
+## Environment variable production
+
+Gunakan template `.env.production.example`:
+
+- `NODE_ENV`, `HOST`, `PORT`
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET`
+
+Catatan:
+
+- Jangan commit `.env.production`.
+- Untuk production, gunakan Supabase agar data/upload tidak tergantung filesystem container.
+
+## Deploy/update di server (Docker Compose)
+
+### Opsi A: build di server dari source (tanpa registry image)
+
+```bash
+git pull
+docker compose up -d --build
+docker compose logs -f app
+```
+
+### Opsi B: jika sudah pakai registry image
+
+```bash
+docker compose pull
+docker compose up -d
+docker compose logs -f app
+```
+
+### Restart service
+
+```bash
+docker compose restart app
+```
+
+## Rollback sederhana
+
+Jika deploy gagal dan server menggunakan source checkout:
+
+```bash
+git checkout <commit-sebelumnya>
+docker compose up -d --build
+```
+
+Jika menggunakan image registry bertag:
+
+1. Ubah tag image ke versi sebelumnya di compose file.
+2. Jalankan `docker compose up -d`.
+
+## Checklist verifikasi pasca deploy
+
+1. Healthcheck:
+   - `GET /api/health` -> status `200` dan JSON `{ status: "ok", timestamp: ... }`
+2. Admin:
+   - `/admin/login` bisa diakses
+   - login berhasil
+3. Konten:
+   - simpan perubahan via dashboard berhasil (`POST /api/admin/content`)
+4. Upload:
+   - upload dari dashboard berhasil (`POST /api/admin/upload`)
+   - file/object masuk ke bucket Supabase
+5. Restart:
+   - `docker compose restart app`
+   - ulangi tes health + login + save
+
+## CI
+
+Workflow CI ada di `.github/workflows/ci-docker.yml`:
+
+- Trigger: push dan pull request ke `main`
+- `npm ci`
+- `npm run build`
+- `docker build`
+- `docker compose config`
+
+Pipeline akan gagal jika salah satu langkah gagal.
+
+## Catatan keamanan
+
+- Rotate secret jika pernah terekspos:
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `ADMIN_PASSWORD`
+  - `ADMIN_SESSION_SECRET`
+- Simpan secret hanya di environment server/secret manager.
