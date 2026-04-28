@@ -71,11 +71,24 @@ docker compose logs -f app
 
 ### Opsi B: jika sudah pakai registry image
 
+Siapkan tag image (opsional) dari template:
+
 ```bash
-docker compose pull
-docker compose up -d
+cp .env.registry.example .env.registry
+```
+
+Jalankan compose dengan override registry:
+
+```bash
+docker compose --env-file .env.registry -f docker-compose.yml -f docker-compose.registry.yml pull
+docker compose --env-file .env.registry -f docker-compose.yml -f docker-compose.registry.yml up -d
 docker compose logs -f app
 ```
+
+Catatan:
+
+- `IMAGE_TAG=latest` atau tag SHA pendek dari GHCR.
+- File `docker-compose.registry.yml` akan menonaktifkan `build` dan memakai image jadi dari GHCR.
 
 ### Restart service
 
@@ -124,6 +137,14 @@ Workflow CI ada di `.github/workflows/ci-docker.yml`:
 - `docker compose config`
 
 Pipeline akan gagal jika salah satu langkah gagal.
+
+Publish image GHCR ada di `.github/workflows/publish-ghcr.yml`:
+
+- Trigger saat push ke branch `deploy/prod` (dan manual `workflow_dispatch`)
+- Build + push image ke `ghcr.io/agmalaro/datamatika2026`
+- Tag yang dipublish:
+  - `latest`
+  - `sha-<short-commit>`
 
 ## Catatan keamanan
 
