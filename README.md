@@ -41,3 +41,38 @@ Mode password:
 - **Mode dashboard (flexible):** kosongkan `ADMIN_PASSWORD` -> bisa ubah password dari halaman admin.
 
 Jika belum ada data auth lokal, default login pertama tetap `admin / admin123`.
+
+## Deploy dengan Docker
+
+### Persiapan
+
+- [Docker](https://docs.docker.com/get-docker/) & Docker Compose terinstall
+
+### Jalankan
+
+```bash
+docker compose up --build
+```
+
+Akses di: `http://localhost:4321`
+
+### Environment Variables
+
+| Variable | Nilai di Docker | Keterangan |
+|----------|----------------|------------|
+| `DEPLOY_ADAPTER` | `node` | Adapter Node standalone (di-override otomatis) |
+| `HOST` | `0.0.0.0` | Bind ke semua interface |
+| `PORT` | `4321` | Port server |
+
+### Perintah
+
+```bash
+# Jalankan di background
+docker compose up --build -d
+
+# Stop & hapus container
+docker compose down
+
+# Rebuild setelah perubahan kode
+docker compose up --build
+```
