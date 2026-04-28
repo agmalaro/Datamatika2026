@@ -1,11 +1,6 @@
 ---
 import { getSiteContent } from "../../lib/content-store";
-import { isAuthenticated } from "../../lib/admin-auth";
 import { LANDING_SECTION_HASHES, SECONDARY_URL_OPTIONS, normalizeSectionHashForSecondaryUrl } from "../../lib/section-anchors";
-
-if (!isAuthenticated(Astro.cookies)) {
-  return Astro.redirect("/admin/login");
-}
 
 const content = await getSiteContent();
 const uploadNoteSecondaryUrl = normalizeSectionHashForSecondaryUrl(
