@@ -1,26 +1,28 @@
-FROM node:22-alpine AS builder
-
+FROM node:22-alpine AS base
 WORKDIR /app
+ENV NODE_ENV=production
 
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 RUN npm ci
 
+FROM deps AS build
 COPY . .
 ENV DEPLOY_ADAPTER=node
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM base AS runner
+RUN apk add --no-cache curl
+RUN addgroup -S nodejs && adduser -S astro -G nodejs
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/public ./public
+COPY package.json ./
 
-WORKDIR /app
-
-ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=4321
+ENV PORT=3000
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-
-EXPOSE 4321
-
+USER astro
+EXPOSE 3000
 CMD ["node", "./dist/server/entry.mjs"]

@@ -1,0 +1,4 @@
+services:
+  app:
+    build: !reset null
+    image: ghcr.io/agmalaro/datamatika2026:${IMAGE_TAG:-latest}

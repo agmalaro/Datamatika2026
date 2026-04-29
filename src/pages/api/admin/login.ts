@@ -1,50 +1,41 @@
 import type { APIRoute } from "astro";
 import { login } from "../../../lib/admin-auth";
 
-export const prerender = false;
+type LoginBody = {
+  username?: string;
+  password?: string;
+};
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  let body: { username?: string; password?: string };
+  let body: LoginBody;
   try {
-    const text = await request.text();
-    if (!text.trim()) {
-      return new Response(JSON.stringify({ message: "Body kosong. Kirim JSON username & password." }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    body = JSON.parse(text) as { username?: string; password?: string };
+    body = (await request.json()) as LoginBody;
   } catch {
-    return new Response(JSON.stringify({ message: "Payload login bukan JSON yang valid." }), {
+    return new Response(JSON.stringify({ message: "Payload login tidak valid." }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  try {
-    const ok = login(cookies, body.username ?? "", body.password ?? "");
-    if (!ok) {
-      return new Response(JSON.stringify({ message: "Username atau password salah." }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!username || !password) {
+    return new Response(JSON.stringify({ message: "Username dan password wajib diisi." }), {
+      status: 400,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("[api/admin/login]", err);
-    return new Response(
-      JSON.stringify({
-        message:
-          "Kesalahan server saat login. Di Netlify, set env ADMIN_USERNAME, ADMIN_PASSWORD, dan ADMIN_SESSION_SECRET (lihat .env.example).",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
   }
+
+  const ok = login(cookies, username, password);
+  if (!ok) {
+    return new Response(JSON.stringify({ message: "Kredensial tidak valid." }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 };

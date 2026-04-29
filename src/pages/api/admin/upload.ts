@@ -1,162 +1,119 @@
-import type { APIRoute } from "astro";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
+import type { APIRoute } from "astro";
 import { isAuthenticated } from "../../../lib/admin-auth";
 import { getSupabaseConfig, getSupabaseServerClient, isSupabaseConfigured } from "../../../lib/supabase-server";
 
-export const prerender = false;
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 
-const ALLOWED_MIME_TO_EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const DOC_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+const UPLOAD_TYPE_TO_DIR: Record<string, string> = {
+  heroBg: "hero",
+  heroLogo: "hero",
+  aboutImage: "about",
+  timelineImage: "timeline",
+  guideFlowImage: "guide",
+  speaker: "speakers",
+  partner: "partners",
+  gallery: "gallery",
+  guideTemplate: "files",
 };
 
-const ALLOWED_TEMPLATE_MIME_TO_EXT: Record<string, string> = {
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-  "application/pdf": "pdf",
-};
+function sanitizeFilename(input: string): string {
+  return input.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
 
-function badRequest(message: string, status = 400) {
+function randomSuffix(): string {
+  return crypto.randomBytes(3).toString("hex");
+}
+
+function extensionFromName(filename: string): string {
+  const ext = path.extname(filename || "").toLowerCase();
+  if (!ext) return "";
+  return ext.startsWith(".") ? ext : `.${ext}`;
+}
+
+function badRequest(message: string) {
   return new Response(JSON.stringify({ message }), {
-    status,
+    status: 400,
     headers: { "Content-Type": "application/json" },
   });
 }
 
-function templateExtFromName(name: string): string {
-  const lower = (name || "").toLowerCase();
-  if (lower.endsWith(".docx")) return "docx";
-  if (lower.endsWith(".doc")) return "doc";
-  if (lower.endsWith(".pdf")) return "pdf";
-  return "";
-}
-
-async function uploadToSupabaseStorage(objectPath: string, body: Buffer, contentType: string): Promise<string> {
-  const client = getSupabaseServerClient();
-  if (!client) throw new Error("Supabase belum dikonfigurasi.");
-  const { bucket } = getSupabaseConfig();
-  const { error } = await client.storage.from(bucket).upload(objectPath, body, {
-    upsert: true,
-    contentType,
+function unauthorized() {
+  return new Response(JSON.stringify({ message: "Unauthorized." }), {
+    status: 401,
+    headers: { "Content-Type": "application/json" },
   });
-  if (error) throw error;
-  const { data } = client.storage.from(bucket).getPublicUrl(objectPath);
-  return data.publicUrl;
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!isAuthenticated(cookies)) return badRequest("Unauthorized", 401);
-  try {
-    const formData = await request.formData();
-    const uploadType = typeof formData.get("uploadType") === "string" ? String(formData.get("uploadType")) : "";
-    const imageFile = formData.get("image");
-    const genericFile = formData.get("file");
-    const file = imageFile instanceof File ? imageFile : genericFile instanceof File ? genericFile : null;
+  if (!isAuthenticated(cookies)) return unauthorized();
 
-    if (!(file instanceof File)) {
-      return badRequest("File tidak ditemukan.");
-    }
+  const form = await request.formData();
+  const uploadType = String(form.get("uploadType") ?? "").trim();
+  const dir = UPLOAD_TYPE_TO_DIR[uploadType];
+  if (!dir) return badRequest("uploadType tidak dikenal.");
 
-    if (uploadType === "guideTemplate") {
-      const ext = ALLOWED_TEMPLATE_MIME_TO_EXT[file.type] || templateExtFromName(file.name);
-      if (!ext) {
-        return badRequest("Format file template tidak didukung. Gunakan DOC, DOCX, atau PDF.");
-      }
+  const fileFieldName = uploadType === "guideTemplate" ? "file" : "image";
+  const file = form.get(fileFieldName);
+  if (!(file instanceof File)) return badRequest("File upload tidak ditemukan.");
+  if (file.size <= 0) return badRequest("File kosong.");
+  if (file.size > MAX_UPLOAD_SIZE_BYTES) return badRequest("Ukuran file maksimal 5MB.");
 
-      if (file.size > 10 * 1024 * 1024) {
-        return badRequest("Ukuran file template maksimal 10MB.");
-      }
-
-      const fileName = `template-artikel-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const objectPath = `files/${fileName}`;
-      let publicUrl = "";
-      if (isSupabaseConfigured()) {
-        publicUrl = await uploadToSupabaseStorage(objectPath, buffer, file.type || "application/octet-stream");
-      } else {
-        const isHosted = Boolean(import.meta.env.NETLIFY) || import.meta.env.VERCEL === "1";
-        if (isHosted) {
-          return badRequest("Upload butuh SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY di hosting.", 503);
-        }
-        const filesDir = fileURLToPath(new URL("../../../../public/files", import.meta.url));
-        mkdirSync(filesDir, { recursive: true });
-        const destination = path.join(filesDir, fileName);
-        writeFileSync(destination, buffer);
-        publicUrl = `/files/${fileName}`;
-      }
-
-      return new Response(
-        JSON.stringify({
-          url: publicUrl,
-          message: "Template berhasil diunggah.",
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const ext = ALLOWED_MIME_TO_EXT[file.type];
-    if (!ext) {
-      return badRequest("Format gambar tidak didukung. Gunakan JPG, PNG, atau WEBP.");
-    }
-
-    const maxSizeBytes = uploadType === "heroBg" ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
-    const maxSizeLabel = uploadType === "heroBg" ? "5MB" : "2MB";
-    if (file.size > maxSizeBytes) {
-      return badRequest(`Ukuran gambar maksimal ${maxSizeLabel}.`);
-    }
-
-    const uploadsSubdir =
-      uploadType === "heroBg" ? "hero" : uploadType === "gallery" ? "gallery" : uploadType === "guideFlowImage" ? "panduan" : "speakers";
-
-    const fileBase = `${uploadType || "image"}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const fileName = uploadType === "heroBg" ? `${fileBase}.webp` : `${fileBase}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    let outputBuffer = buffer;
-    let outputMime = file.type || "application/octet-stream";
-    if (uploadType === "heroBg") {
-      // Hero background is resized and compressed for faster first paint on landing page.
-      outputBuffer = await sharp(buffer)
-        .rotate()
-        .resize({ width: 1920, withoutEnlargement: true, fit: "inside" })
-        .webp({ quality: 82 })
-        .toBuffer();
-      outputMime = "image/webp";
-    }
-    const objectPath = `uploads/${uploadsSubdir}/${fileName}`;
-    let publicUrl = "";
-    if (isSupabaseConfigured()) {
-      publicUrl = await uploadToSupabaseStorage(objectPath, outputBuffer, outputMime);
-    } else {
-      const isHosted = Boolean(import.meta.env.NETLIFY) || import.meta.env.VERCEL === "1";
-      if (isHosted) {
-        return badRequest("Upload butuh SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY di hosting.", 503);
-      }
-      const uploadsDir = fileURLToPath(new URL(`../../../../public/uploads/${uploadsSubdir}`, import.meta.url));
-      mkdirSync(uploadsDir, { recursive: true });
-      const destination = path.join(uploadsDir, fileName);
-      writeFileSync(destination, outputBuffer);
-      publicUrl = `/uploads/${uploadsSubdir}/${fileName}`;
-    }
-
-    return new Response(
-      JSON.stringify({
-        url: publicUrl,
-        message: "Gambar berhasil diunggah.",
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  } catch (error) {
-    console.error("[api/admin/upload]", error);
-    return badRequest("Upload gagal. Periksa konfigurasi Supabase dan izin bucket.", 500);
+  const allowedTypes = uploadType === "guideTemplate" ? DOC_TYPES : IMAGE_TYPES;
+  if (file.type && !allowedTypes.has(file.type)) {
+    return badRequest("Tipe file tidak didukung.");
   }
+
+  const cleanOriginalName = sanitizeFilename(file.name || "upload");
+  const ext = extensionFromName(cleanOriginalName) || (uploadType === "guideTemplate" ? ".pdf" : ".bin");
+  const baseName = sanitizeFilename(uploadType);
+  const fileName = `${baseName}-${Date.now()}-${randomSuffix()}${ext}`;
+  const filePath = `${dir}/${fileName}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  if (isSupabaseConfigured()) {
+    const client = getSupabaseServerClient();
+    if (!client) return badRequest("Supabase belum terkonfigurasi dengan benar.");
+    const { bucket } = getSupabaseConfig();
+
+    const { error } = await client.storage.from(bucket).upload(filePath, bytes, {
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+    if (error) {
+      return new Response(JSON.stringify({ message: `Upload Supabase gagal: ${error.message}` }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { data } = client.storage.from(bucket).getPublicUrl(filePath);
+    const publicUrl = data?.publicUrl || "";
+    return new Response(JSON.stringify({ url: publicUrl, path: filePath }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const relativeUrl = uploadType === "guideTemplate" ? `/files/${fileName}` : `/uploads/${dir}/${fileName}`;
+  const absoluteDir = uploadType === "guideTemplate"
+    ? path.join(process.cwd(), "public", "files")
+    : path.join(process.cwd(), "public", "uploads", dir);
+
+  await mkdir(absoluteDir, { recursive: true });
+  await writeFile(path.join(absoluteDir, fileName), bytes);
+
+  return new Response(JSON.stringify({ url: relativeUrl }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 };

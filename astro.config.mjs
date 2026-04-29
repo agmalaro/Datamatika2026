@@ -20,7 +20,9 @@ function pickAdapter() {
   }
 
   if (isNode) {
-    return node({ mode: "standalone" });
+    return node({
+      mode: "standalone",
+    });
   }
 
   throw new Error(

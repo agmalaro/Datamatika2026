@@ -15,15 +15,15 @@
   "about": {
     "heading": "Informasi Datamatika 2026",
     "body": "Datamatika hadir kembali sebagai Seminar Nasional Sains Data, Matematika, dan Informatika yang diselenggarakan oleh SSMI. Menjadi wadah bagi akademisi, peneliti, dan praktisi untuk berbagi ilmu, gagasan, serta inovasi di bidang sains data dan sekitarnya. Tahun ini, Datamatika juga membuka kesempatan Call for Papers (Full Paper) dengan jadwal submission yang telah ditentukan. Ini saatnya kamu berkontribusi dan menunjukkan hasil penelitianmu. Jangan lewatkan kesempatan untuk menjadi bagian dari ruang kolaborasi dan inspirasi ini. Catat tanggalnya, siapkan paper terbaikmu, dan jadilah bagian dari Datamatika 2026. #SSMIInfo #Datamatika2026 #CallForPapers #SeminarNasional #SainsData #Matematika #Informatika",
-    "image": "/uploads/speakers/aboutImage-1776879981970-2rip18.jpg"
+    "image": "/uploads/about/aboutImage-1777380433072-36a323.jpg"
   },
   "timeline": [
     {
-      "date": "1–18 Mei 2026",
+      "date": "1â18 Mei 2026",
       "label": "Pendaftaran dan Submit Full Paper"
     },
     {
-      "date": "19–22 Mei 2026",
+      "date": "19â22 Mei 2026",
       "label": "Review Paper"
     },
     {
@@ -47,12 +47,34 @@
     "secondaryLabel": "Lihat Panduan Pendaftaran dan Pegajuan Artikel",
     "secondaryUrl": "/panduan"
   },
+  "contact": {
+    "heading": "Hubungi kami",
+    "address": "CPVJ+7C2 Kampus IPB, Jl. Meranti, Babakan, Dramaga, Bogor Regency, West Java 16680",
+    "phones": [
+      {
+        "name": "Enon",
+        "tel": "+6281311679203",
+        "display": "0813-1167-9203"
+      },
+      {
+        "name": "Ridwan",
+        "tel": "+6281288337997",
+        "display": "0812-8833-7997"
+      },
+      {
+        "name": "Jimly",
+        "tel": "+628974472085",
+        "display": "0897-4472-085"
+      }
+    ],
+    "email": "ssmi@apps.ipb.ac.id"
+  },
   "timelineImage": "/uploads/speakers/timelineImage-1776879979611-5o2h15.jpg",
   "speakers": [
     {
       "title": "Delil Khairat, S.Si., MBA.",
       "href": "https://www.linkedin.com/in/delilkhairat/",
-      "image": "/uploads/speakers/speaker-1776882019287-qx7ewo.png"
+      "image": "/uploads/speakers/speaker-1777380779591-cd85b7.jpeg"
     },
     {
       "title": "Dr. Janry H.U.P. Simanungkalit, S.Si., M.Si.",

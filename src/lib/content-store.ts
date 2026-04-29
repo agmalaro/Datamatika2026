@@ -35,6 +35,8 @@ function sanitizeContent(value: unknown): SiteContent {
   const aboutValue = isRecord(value.about) ? value.about : {};
   const timelineValue = Array.isArray(value.timeline) ? value.timeline : [];
   const uploadNoteValue = isRecord(value.uploadNote) ? value.uploadNote : {};
+  const contactValue = isRecord(value.contact) ? value.contact : {};
+  const contactPhonesValue = Array.isArray(contactValue.phones) ? contactValue.phones : [];
   const guideValue = isRecord(value.guide) ? value.guide : {};
   const guideFeeValue = isRecord(guideValue.fee) ? guideValue.fee : {};
   const agendaValue = isRecord(value.agenda) ? value.agenda : {};
@@ -80,6 +82,39 @@ function sanitizeContent(value: unknown): SiteContent {
         sanitizeString(uploadNoteValue.secondaryUrl, defaultSiteContent.uploadNote.secondaryUrl),
         defaultSiteContent.uploadNote.secondaryUrl
       ),
+    },
+    contact: {
+      heading: sanitizeString(contactValue.heading, defaultSiteContent.contact.heading),
+      address: sanitizeString(contactValue.address, defaultSiteContent.contact.address),
+      phones:
+        contactPhonesValue
+          .filter(isRecord)
+          .map((item) => ({
+            name: sanitizeString(item.name, ""),
+            tel: sanitizeString(item.tel, ""),
+            display: sanitizeString(item.display, ""),
+          }))
+          .filter((item) => item.name && item.tel && item.display)
+          .map((item) => ({
+            name: item.name,
+            tel: item.tel,
+            display: item.display,
+          })).length > 0
+          ? contactPhonesValue
+              .filter(isRecord)
+              .map((item) => ({
+                name: sanitizeString(item.name, ""),
+                tel: sanitizeString(item.tel, ""),
+                display: sanitizeString(item.display, ""),
+              }))
+              .filter((item) => item.name && item.tel && item.display)
+              .map((item) => ({
+                name: item.name,
+                tel: item.tel,
+                display: item.display,
+              }))
+          : defaultSiteContent.contact.phones,
+      email: sanitizeString(contactValue.email, defaultSiteContent.contact.email),
     },
     timelineImage: timelineImageValue.trim(),
     speakers: speakersValue

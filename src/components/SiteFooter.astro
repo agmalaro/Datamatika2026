@@ -1,15 +1,7 @@
 ---
 import { getSiteData, images } from "../data/site";
 
-const { footerPartners } = await getSiteData();
-
-const aboutAddress =
-  "CPVJ+7C2 Kampus IPB, Jl. Meranti, Babakan, Dramaga, Bogor Regency, West Java 16680";
-const phones = [
-  { name: "Enon", tel: "+6281311679203", display: "0813-1167-9203" },
-  { name: "Ridwan", tel: "+6281288337997", display: "0812-8833-7997" },
-  { name: "Jimly", tel: "+628974472085", display: "0897-4472-085" },
-] as const;
+const { footerPartners, contact } = await getSiteData();
 
 const programLinks = [
   { label: "Statistika", href: "https://stat.ipb.ac.id/" },
@@ -63,7 +55,7 @@ const footerBannerHeight = 110;
     <div class="footer-host__shell">
       <div class="footer-host__grid">
         <aside class="footer-host__about">
-          <h3 class="footer-host__heading">Hubungi kami</h3>
+          <h3 class="footer-host__heading">{contact.heading}</h3>
           <ul class="footer-host__list">
             <li class="footer-host__item">
               <span class="footer-host__icon" aria-hidden="true">
@@ -72,7 +64,7 @@ const footerBannerHeight = 110;
                   <circle cx="12" cy="11" r="2.5"></circle>
                 </svg>
               </span>
-              <span>{aboutAddress}</span>
+              <span>{contact.address}</span>
             </li>
             <li class="footer-host__item">
               <span class="footer-host__icon" aria-hidden="true">
@@ -84,7 +76,7 @@ const footerBannerHeight = 110;
               </span>
               <span class="footer-host__phones">
                 {
-                  phones.map((p) => (
+                  contact.phones.map((p) => (
                     <span class="footer-host__phone-line">
                       <a class="footer-host__link" href={`tel:${p.tel}`}>
                         {p.name} ({p.display})
@@ -101,7 +93,7 @@ const footerBannerHeight = 110;
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                 </svg>
               </span>
-              <a class="footer-host__link" href="mailto:ssmi@apps.ipb.ac.id">ssmi@apps.ipb.ac.id</a>
+              <a class="footer-host__link" href={`mailto:${contact.email}`}>{contact.email}</a>
             </li>
           </ul>
         </aside>

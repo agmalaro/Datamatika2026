@@ -3,17 +3,15 @@ import { isAuthenticated } from "../../../lib/admin-auth";
 import { getSiteContent, saveSiteContent } from "../../../lib/content-store";
 import type { SiteContent } from "../../../data/content.schema";
 
-export const prerender = false;
-
-function unauthorized() {
-  return new Response(JSON.stringify({ message: "Unauthorized" }), {
+function unauthorizedResponse() {
+  return new Response(JSON.stringify({ message: "Unauthorized." }), {
     status: 401,
     headers: { "Content-Type": "application/json" },
   });
 }
 
 export const GET: APIRoute = async ({ cookies }) => {
-  if (!isAuthenticated(cookies)) return unauthorized();
+  if (!isAuthenticated(cookies)) return unauthorizedResponse();
   const content = await getSiteContent();
   return new Response(JSON.stringify(content), {
     status: 200,
@@ -22,13 +20,13 @@ export const GET: APIRoute = async ({ cookies }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!isAuthenticated(cookies)) return unauthorized();
+  if (!isAuthenticated(cookies)) return unauthorizedResponse();
 
   let payload: SiteContent;
   try {
     payload = (await request.json()) as SiteContent;
   } catch {
-    return new Response(JSON.stringify({ message: "Payload konten bukan JSON yang valid." }), {
+    return new Response(JSON.stringify({ message: "Payload konten tidak valid." }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
@@ -40,16 +38,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("[api/admin/content]", err);
-    return new Response(
-      JSON.stringify({
-        message: "Gagal menyimpan konten. Periksa konfigurasi Supabase (URL/key/tabel) atau storage lokal.",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Gagal menyimpan konten.";
+    return new Response(JSON.stringify({ message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };

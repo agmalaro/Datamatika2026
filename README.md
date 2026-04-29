@@ -1,78 +1,159 @@
-# seminar-datamatika-2026
-Landing Page Seminar Datamatika Tahun 2026.
+# DATAMATIKA 2026 (Astro SSR + Admin CMS)
 
-## Admin CMS Lokal (Pure Astro)
+Landing page dan admin CMS untuk DATAMATIKA 2026 dengan runtime Astro SSR (Node adapter) dan storage eksternal Supabase.
 
-Project ini sudah punya admin panel lokal berbasis Astro (tanpa CMS eksternal):
+## Fitur utama
 
-- Login admin: `/admin/login`
+- Admin login: `/admin/login`
 - Dashboard konten: `/admin`
 - API admin:
   - `POST /api/admin/login`
   - `POST /api/admin/logout`
   - `GET/POST /api/admin/content`
-  - `POST /api/admin/upload` (upload foto speaker)
-  - `POST /api/admin/password` (ubah password)
+  - `POST /api/admin/upload`
+  - `POST /api/admin/password`
+- Health endpoint untuk operasional: `GET /api/health`
 
-Konten tersimpan ke file lokal `src/data/content.local.json`.
-Password lokal (jika `ADMIN_PASSWORD` kosong) disimpan aman (hash) di `src/data/admin.local.json`.
+## Menjalankan lokal (tanpa Docker)
 
-## Menjalankan Project
+1. Salin `.env.example` menjadi `.env` lalu isi nilainya.
+2. Jalankan:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Konfigurasi Credential Admin
-
-Buat file `.env` di root project:
-
-```env
-ADMIN_USERNAME=admin
-# Optional: jika diisi, password dikunci dari env (tidak bisa diubah dari dashboard)
-ADMIN_PASSWORD=
-ADMIN_SESSION_SECRET=ganti-dengan-secret-yang-kuat
-```
-
-Mode password:
-
-- **Mode env (locked):** isi `ADMIN_PASSWORD` -> ubah password lewat `.env`.
-- **Mode dashboard (flexible):** kosongkan `ADMIN_PASSWORD` -> bisa ubah password dari halaman admin.
-
 Jika belum ada data auth lokal, default login pertama tetap `admin / admin123`.
 
-## Deploy dengan Docker
+## Menjalankan lokal via Docker Compose
 
-### Persiapan
-
-- [Docker](https://docs.docker.com/get-docker/) & Docker Compose terinstall
-
-### Jalankan
+1. Salin `.env.production.example` menjadi `.env.production`.
+2. Isi semua environment variable.
+3. Jalankan:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-Akses di: `http://localhost:4321`
-
-### Environment Variables
-
-| Variable | Nilai di Docker | Keterangan |
-|----------|----------------|------------|
-| `DEPLOY_ADAPTER` | `node` | Adapter Node standalone (di-override otomatis) |
-| `HOST` | `0.0.0.0` | Bind ke semua interface |
-| `PORT` | `4321` | Port server |
-
-### Perintah
+4. Lihat log:
 
 ```bash
-# Jalankan di background
-docker compose up --build -d
+docker compose logs -f app
+```
 
-# Stop & hapus container
+5. Stop:
+
+```bash
 docker compose down
-
-# Rebuild setelah perubahan kode
-docker compose up --build
 ```
+
+Aplikasi di container memakai port **3000** (`http://localhost:3000`).
+
+## Environment variable production
+
+Gunakan template `.env.production.example`:
+
+- `NODE_ENV`, `HOST`, `PORT`
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET`
+
+Catatan:
+
+- Jangan commit `.env.production`.
+- Untuk production, gunakan Supabase agar data/upload tidak tergantung filesystem container.
+
+## Deploy/update di server (Docker Compose)
+
+### Opsi A: build di server dari source (tanpa registry image)
+
+```bash
+git pull
+docker compose up -d --build
+docker compose logs -f app
+```
+
+### Opsi B: jika sudah pakai registry image
+
+Siapkan tag image (opsional) dari template:
+
+```bash
+cp .env.registry.example .env.registry
+```
+
+Jalankan compose dengan override registry:
+
+```bash
+docker compose --env-file .env.registry -f docker-compose.yml -f docker-compose.registry.yml pull
+docker compose --env-file .env.registry -f docker-compose.yml -f docker-compose.registry.yml up -d
+docker compose logs -f app
+```
+
+Catatan:
+
+- `IMAGE_TAG=latest` atau tag SHA pendek dari GHCR.
+- File `docker-compose.registry.yml` akan menonaktifkan `build` dan memakai image jadi dari GHCR.
+
+### Restart service
+
+```bash
+docker compose restart app
+```
+
+## Rollback sederhana
+
+Jika deploy gagal dan server menggunakan source checkout:
+
+```bash
+git checkout <commit-sebelumnya>
+docker compose up -d --build
+```
+
+Jika menggunakan image registry bertag:
+
+1. Ubah tag image ke versi sebelumnya di compose file.
+2. Jalankan `docker compose up -d`.
+
+## Checklist verifikasi pasca deploy
+
+1. Healthcheck:
+   - `GET /api/health` -> status `200` dan JSON `{ status: "ok", timestamp: ... }`
+2. Admin:
+   - `/admin/login` bisa diakses
+   - login berhasil
+3. Konten:
+   - simpan perubahan via dashboard berhasil (`POST /api/admin/content`)
+4. Upload:
+   - upload dari dashboard berhasil (`POST /api/admin/upload`)
+   - file/object masuk ke bucket Supabase
+5. Restart:
+   - `docker compose restart app`
+   - ulangi tes health + login + save
+
+## CI
+
+Workflow CI ada di `.github/workflows/ci-docker.yml`:
+
+- Trigger: push dan pull request ke `main`
+- `npm ci`
+- `npm run build`
+- `docker build`
+- `docker compose config`
+
+Pipeline akan gagal jika salah satu langkah gagal.
+
+Publish image GHCR ada di `.github/workflows/publish-ghcr.yml`:
+
+- Trigger saat push ke branch `deploy/prod` (dan manual `workflow_dispatch`)
+- Build + push image ke `ghcr.io/agmalaro/datamatika2026`
+- Tag yang dipublish:
+  - `latest`
+  - `sha-<short-commit>`
+
+## Catatan keamanan
+
+- Rotate secret jika pernah terekspos:
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `ADMIN_PASSWORD`
+  - `ADMIN_SESSION_SECRET`
+- Simpan secret hanya di environment server/secret manager.
