@@ -30,5 +30,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t datamatika-ssr:ci .
 
+      # compose.yml references .env.production (not committed). CI uses the example template so
+      # `docker compose config` can validate YAML without real secrets.
       - name: Validate Docker Compose config
-        run: docker compose config
+        run: cp .env.production.example .env.production && docker compose config
