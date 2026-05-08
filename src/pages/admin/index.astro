@@ -337,44 +337,6 @@ const initialContactPhoneRows = (content.contact.phones || [])
       .speaker-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
       .speaker-actions input[type="file"] { display: none; }
 
-      /* Editorial sections (Guide page) */
-      #guide-editorial-list { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-      .editorial-item {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 0.85rem;
-        background: #f8fafc;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 1.1rem 1.1rem 1.25rem;
-      }
-      .editorial-item__header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        margin: 0;
-      }
-      .editorial-item__title {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: var(--brand);
-        margin: 0;
-      }
-      .editorial-item__field { display: grid; gap: 0.35rem; margin: 0; }
-      .editorial-item__field > label { margin: 0; }
-      .editorial-item__field > input,
-      .editorial-item__field > textarea {
-        display: block;
-        width: 100%;
-      }
-      .editorial-item__field textarea { min-height: 140px; line-height: 1.5; }
-      .editorial-item__hint {
-        font-size: 0.78rem;
-        color: var(--muted);
-        margin: 0;
-      }
-
       /* Progress Bar */
       .save-progress {
         position: fixed;
@@ -450,6 +412,67 @@ const initialContactPhoneRows = (content.contact.phones || [])
       }
       
       .is-hidden { display: none !important; }
+    </style>
+    <style is:global>
+      /* Editorial sections (Guide page) — global so JS-injected nodes get styled. */
+      #guide-editorial-list { display: flex; flex-direction: column; gap: 1rem; }
+      .editorial-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.1rem 1.1rem 1.25rem;
+      }
+      .editorial-item__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 0;
+      }
+      .editorial-item__title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #c04800;
+        margin: 0;
+      }
+      .editorial-item__field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin: 0;
+      }
+      .editorial-item__field > label {
+        display: block;
+        font-size: 0.88rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1e293b;
+      }
+      .editorial-item__field > input,
+      .editorial-item__field > textarea {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.7rem 0.95rem;
+        font-size: 0.95rem;
+        font-family: inherit;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .editorial-item__field textarea {
+        min-height: 150px;
+        line-height: 1.55;
+        resize: vertical;
+      }
+      .editorial-item__hint {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin: 0;
+      }
     </style>
   </head>
   <body>
