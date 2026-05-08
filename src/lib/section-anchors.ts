@@ -4,7 +4,7 @@ export const LANDING_SECTION_HASHES: { value: string; label: string }[] = [
   { value: "#about", label: "Tentang" },
   { value: "#timeline", label: "Timeline" },
   { value: "#speakers", label: "Pembicara" },
-  { value: "#upload", label: "Unggah file" },
+  { value: "#upload", label: "Register" },
   { value: "#contact", label: "Kontak" },
 ];
 
