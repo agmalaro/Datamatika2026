@@ -39,6 +39,18 @@ function sanitizeContent(value: unknown): SiteContent {
   const contactPhonesValue = Array.isArray(contactValue.phones) ? contactValue.phones : [];
   const guideValue = isRecord(value.guide) ? value.guide : {};
   const guideFeeValue = isRecord(guideValue.fee) ? guideValue.fee : {};
+  const guideEditorialRaw = Array.isArray(guideValue.editorialSections) ? guideValue.editorialSections : [];
+  const guideEditorialSanitized = guideEditorialRaw
+    .filter(isRecord)
+    .map((sec) => {
+      const heading = typeof sec.heading === "string" ? sec.heading.trim() : "";
+      const body = typeof sec.body === "string" ? sec.body.trim() : "";
+      const bullets = Array.isArray(sec.bullets)
+        ? sec.bullets.map((b) => (typeof b === "string" ? b.trim() : "")).filter(Boolean)
+        : [];
+      return { heading, body, bullets };
+    })
+    .filter((sec) => sec.heading && (sec.body.length > 0 || sec.bullets.length > 0));
   const agendaValue = isRecord(value.agenda) ? value.agenda : {};
   const agendaItemsValue = Array.isArray(agendaValue.items) ? agendaValue.items : [];
   const timelineImageValue = typeof value.timelineImage === "string" ? value.timelineImage : "";
@@ -153,6 +165,13 @@ function sanitizeContent(value: unknown): SiteContent {
         image: item.image,
       })),
     guide: {
+      pageTitle: sanitizeString(guideValue.pageTitle, defaultSiteContent.guide.pageTitle),
+      pageIntro:
+        typeof guideValue.pageIntro === "string" && guideValue.pageIntro.trim().length > 0
+          ? guideValue.pageIntro.trim()
+          : defaultSiteContent.guide.pageIntro,
+      editorialSections:
+        guideEditorialSanitized.length > 0 ? guideEditorialSanitized : defaultSiteContent.guide.editorialSections,
       flowTitle: sanitizeString(guideValue.flowTitle, defaultSiteContent.guide.flowTitle),
       flowSteps:
         (Array.isArray(guideValue.flowSteps) ? guideValue.flowSteps : [])

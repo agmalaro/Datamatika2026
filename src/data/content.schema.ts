@@ -56,7 +56,17 @@ export type GuideFeeContent = {
   paidAccountName: string;
 };
 
+/** Blok redaksi di halaman /panduan — body: paragraf dipisahkan baris kosong ganda (\\n\\n). */
+export type GuideEditorialSectionContent = {
+  heading: string;
+  body: string;
+  bullets: string[];
+};
+
 export type GuideContent = {
+  pageTitle: string;
+  pageIntro: string;
+  editorialSections: GuideEditorialSectionContent[];
   flowTitle: string;
   flowSteps: string[];
   flowImage?: string;

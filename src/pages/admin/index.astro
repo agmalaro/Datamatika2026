@@ -71,6 +71,7 @@ const initialAboutImage = content.about.image?.trim() || "";
 const initialTimelineImage = content.timelineImage?.trim() || "";
 const initialGuideFlowImage = content.guide.flowImage?.trim() || "";
 const initialGuideFlowSteps = (content.guide.flowSteps || []).join("\n");
+const initialGuideEditorial = content.guide.editorialSections;
 const initialAgendaRows = (content.agenda.items || [])
   .map((item) => [item.day, item.time, item.agenda, item.detail || ""].join("|"))
   .join("\n");
@@ -255,6 +256,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
       }
 
       .fields { display: grid; gap: 1.25rem; }
+      .admin-subheading { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--brand); font-weight: 700; }
       .grid { display: grid; }
       label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--ink); }
       
@@ -611,6 +613,18 @@ const initialContactPhoneRows = (content.contact.phones || [])
           <section class="card" id="section-guide">
             <h2>Guide & Fee Page</h2>
             <div class="fields">
+              <div class="form-group" style="border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; margin-bottom: 0.5rem;">
+                <h3 class="admin-subheading">Halaman Panduan (/panduan)</h3>
+                <p class="meta-note" style="margin-bottom: 1rem;">
+                  Judul &amp; intro di atas, lalu blok redaksi (bisa banyak). Tiap blok punya judul (H2), isi paragraf (pisahkan paragraf dengan baris kosong), dan daftar bullet opsional (satu baris = satu poin).
+                </p>
+                <label>Judul halaman <input name="guidePageTitle" value={content.guide.pageTitle} required /></label>
+                <label style="margin-top: 0.75rem;">Intro halaman
+                  <textarea name="guidePageIntro" rows="3" required>{content.guide.pageIntro}</textarea>
+                </label>
+                <div id="guide-editorial-list" style="margin-top: 1rem; display: grid; gap: 1rem;"></div>
+                <button class="btn btn-secondary" id="add-guide-editorial-btn" type="button" style="margin-top: 0.75rem;">+ Tambah bagian redaksi</button>
+              </div>
               <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div class="form-group">
                   <label>Registration Flow Title</label>
@@ -734,6 +748,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
         initialAboutImage,
         initialTimelineImage,
         initialGuideFlowImage,
+        initialGuideEditorial,
       }}
     >
       const form = document.getElementById("admin-form");
@@ -773,6 +788,8 @@ const initialContactPhoneRows = (content.contact.phones || [])
       const guideFeeTypeInput = document.getElementById("guide-fee-type");
       const guideFeeFreeGroup = document.getElementById("guide-fee-free-group");
       const guideFeePaidGroup = document.getElementById("guide-fee-paid-group");
+      const guideEditorialList = document.getElementById("guide-editorial-list");
+      const addGuideEditorialBtn = document.getElementById("add-guide-editorial-btn");
       const changePasswordBtn = document.getElementById("change-password-btn");
       const currentPasswordInput = document.getElementById("currentPassword");
       const nextPasswordInput = document.getElementById("nextPassword");
@@ -787,6 +804,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
       const speakerSeeds = Array.isArray(initialSpeakers) ? initialSpeakers : [];
       const partnerSeeds = Array.isArray(initialPartners) ? initialPartners : [];
       const gallerySeeds = Array.isArray(initialGallery) ? initialGallery : [];
+      const editorialSeeds = Array.isArray(initialGuideEditorial) ? initialGuideEditorial : [];
       let toastTimer = null;
 
       // Sidebar logic
@@ -1021,13 +1039,71 @@ const initialContactPhoneRows = (content.contact.phones || [])
           .filter((entry) => entry.image);
       }
 
+      function createGuideEditorialItem(section = { heading: "", body: "", bullets: [] }) {
+        if (!guideEditorialList) return;
+        const item = document.createElement("article");
+        item.className = "speaker-item guide-editorial-item";
+        item.innerHTML = `
+          <h3>Bagian redaksi</h3>
+          <label>Judul blok (tampil sebagai H2) <input data-key="heading" type="text" required /></label>
+          <label style="margin-top: 0.5rem;">Isi (paragraf)
+            <textarea data-key="body" rows="8" required placeholder="Paragraf pertama.
+
+
+Paragraf berikutnya — pisahkan dengan baris kosong."></textarea>
+          </label>
+          <label style="margin-top: 0.5rem;">Daftar poin (opsional, satu baris = satu bullet)
+            <textarea data-key="bullets" rows="5" placeholder="Kosongkan jika tidak perlu daftar."></textarea>
+          </label>
+          <div class="speaker-actions" style="margin-top: 0.5rem;">
+            <button class="btn-secondary" type="button" data-action="remove-editorial">Hapus bagian</button>
+          </div>
+        `;
+        const headingInput = item.querySelector('[data-key="heading"]');
+        const bodyTa = item.querySelector('[data-key="body"]');
+        const bulletsTa = item.querySelector('[data-key="bullets"]');
+        if (headingInput instanceof HTMLInputElement) headingInput.value = section.heading ?? "";
+        if (bodyTa instanceof HTMLTextAreaElement) bodyTa.value = section.body ?? "";
+        if (bulletsTa instanceof HTMLTextAreaElement) {
+          bulletsTa.value = Array.isArray(section.bullets) ? section.bullets.join("\n") : "";
+        }
+        guideEditorialList.appendChild(item);
+      }
+
+      function readGuideEditorialSections() {
+        if (!guideEditorialList) return [];
+        return [...guideEditorialList.querySelectorAll(".guide-editorial-item")]
+          .map((item) => {
+            const heading = item.querySelector('[data-key="heading"]')?.value?.trim() ?? "";
+            const body = item.querySelector('[data-key="body"]')?.value?.trim() ?? "";
+            const bullets = (item.querySelector('[data-key="bullets"]')?.value ?? "")
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean);
+            return { heading, body, bullets };
+          })
+          .filter((s) => s.heading && (s.body.length > 0 || s.bullets.length > 0));
+      }
+
       for (const speaker of speakerSeeds) createSpeakerItem(speaker);
       for (const partner of partnerSeeds) createPartnerItem(partner);
       for (const entry of gallerySeeds) createGalleryItem(entry);
+      for (const sec of editorialSeeds) createGuideEditorialItem(sec);
+
+      guideEditorialList?.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.getAttribute("data-action") === "remove-editorial") {
+          target.closest(".guide-editorial-item")?.remove();
+        }
+      });
 
       addSpeakerBtn?.addEventListener("click", () => createSpeakerItem());
       addPartnerBtn?.addEventListener("click", () => createPartnerItem());
       addGalleryBtn?.addEventListener("click", () => createGalleryItem());
+      addGuideEditorialBtn?.addEventListener("click", () =>
+        createGuideEditorialItem({ heading: "", body: "", bullets: [] })
+      );
       eventStartsAtInput?.addEventListener("change", updateEventDatePreview);
       eventStartsAtInput?.addEventListener("input", updateEventDatePreview);
       updateEventDatePreview();
@@ -1522,6 +1598,12 @@ const initialContactPhoneRows = (content.contact.phones || [])
         const speakers = readSpeakers();
         const partners = readPartners();
         const gallery = readGallery();
+        const guideEditorialSections = readGuideEditorialSections();
+        if (guideEditorialSections.length === 0) {
+          setSavingUi(false);
+          showToast("Minimal satu bagian redaksi untuk halaman Panduan.", "err");
+          return;
+        }
 
         const payload = {
           siteMeta: {
@@ -1558,6 +1640,9 @@ const initialContactPhoneRows = (content.contact.phones || [])
             email: form.contactEmail.value,
           },
           guide: {
+            pageTitle: form.guidePageTitle.value,
+            pageIntro: form.guidePageIntro.value,
+            editorialSections: guideEditorialSections,
             flowTitle: form.guideFlowTitle.value,
             flowSteps: guideFlowSteps,
             flowImage: form.guideFlowImage.value,

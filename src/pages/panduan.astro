@@ -10,6 +10,16 @@ const flowSteps = guide.flowSteps.length > 0 ? guide.flowSteps : ["Alur submit b
 const flowImage = guide.flowImage?.trim() || images.logo;
 const templateUrl = guide.templateUrl?.trim() || "/files/Template-Seminar-Nasional-2026.docx";
 const templateLabel = guide.templateLabel?.trim() || "Unduh Template Artikel (.docx)";
+const pageTitle = guide.pageTitle?.trim() || "Panduan Submit Artikel Seminar";
+const pageIntro = guide.pageIntro?.trim() || "";
+const editorialSections = guide.editorialSections?.length ? guide.editorialSections : [];
+
+function paragraphsFromBody(body: string): string[] {
+  return body
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
 ---
 
 <BaseLayout title="Panduan Submit Artikel | DATAMATIKA 2026">
@@ -17,52 +27,26 @@ const templateLabel = guide.templateLabel?.trim() || "Unduh Template Artikel (.d
   <main id="main">
     <section class="section section--gallery-page">
       <div class="wrap panduan-page">
-        <h1 class="heading-accent heading-accent--lg">Panduan Submit Artikel Seminar</h1>
-        <p class="panduan-intro">
-          Halaman ini berisi panduan penulisan dan pengumpulan artikel untuk Seminar Nasional DATAMATIKA 2026,
-          termasuk checklist submit, alur pendaftaran, template artikel, dan informasi biaya pendaftaran.
-        </p>
+        <h1 class="heading-accent heading-accent--lg">{pageTitle}</h1>
+        {pageIntro ? <p class="panduan-intro">{pageIntro}</p> : null}
 
-        <article class="panduan-card">
-          <h2>Panduan Penulis</h2>
-          <p>
-            Penulis diundang untuk mengirimkan naskah ke prosiding ini. Setiap naskah akan ditinjau terlebih dahulu
-            oleh editor untuk memastikan kesesuaian dengan fokus dan ruang lingkup seminar. Naskah yang dinilai sesuai
-            akan dilanjutkan ke proses peer review sebelum diputuskan diterima atau ditolak.
-          </p>
-          <p>
-            Sebelum mengirim naskah, penulis bertanggung jawab memperoleh izin untuk mempublikasikan semua materi yang
-            disertakan (misalnya foto, dokumen, atau dataset). Semua penulis yang dicantumkan wajib menyetujui
-            pencantuman namanya sebagai penulis. Jika diperlukan, penelitian harus telah mendapatkan persetujuan dari
-            komite etik yang berwenang sesuai ketentuan hukum negara tempat penelitian dilakukan.
-          </p>
-          <p>
-            Editor dapat menolak naskah pada tahap awal (desk reject) jika tidak memenuhi standar mutu minimum.
-            Pastikan rancangan studi dan argumen penelitian disusun serta dijelaskan dengan baik. Judul harus ringkas,
-            dan abstrak harus mampu berdiri sendiri. Hal ini meningkatkan peluang naskah disetujui reviewer untuk
-            ditelaah.
-          </p>
-        </article>
-
-        <article class="panduan-card">
-          <h2>Checklist Persiapan Submit</h2>
-          <p>Semua pengiriman naskah wajib memenuhi persyaratan berikut:</p>
-          <ul>
-            <li>Naskah telah memenuhi ketentuan dalam Panduan Penulis.</li>
-            <li>Naskah belum pernah dipublikasikan dan tidak sedang diajukan ke jurnal/prosiding lain.</li>
-            <li>Seluruh referensi telah diperiksa akurasi dan kelengkapannya.</li>
-            <li>Semua tabel dan gambar telah diberi nomor serta label yang jelas.</li>
-            <li>Izin publikasi untuk foto, dataset, atau materi pendukung lainnya telah diperoleh.</li>
-          </ul>
-        </article>
-
-        <article class="panduan-card">
-          <h2>Pernyataan Privasi</h2>
-          <p>
-            Nama dan alamat email yang dimasukkan pada situs ini hanya digunakan untuk kebutuhan Konferensi/Prosiding
-            DATAMATIKA 2026 dan tidak akan digunakan untuk tujuan lain maupun dibagikan ke pihak lain.
-          </p>
-        </article>
+        {
+          editorialSections.map((sec) => (
+            <article class="panduan-card">
+              <h2>{sec.heading}</h2>
+              {paragraphsFromBody(sec.body).map((para) => (
+                <p>{para}</p>
+              ))}
+              {sec.bullets && sec.bullets.length > 0 ? (
+                <ul>
+                  {sec.bullets.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </article>
+          ))
+        }
 
         <article class="panduan-card panduan-grid">
           <div>
