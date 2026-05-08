@@ -337,6 +337,44 @@ const initialContactPhoneRows = (content.contact.phones || [])
       .speaker-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
       .speaker-actions input[type="file"] { display: none; }
 
+      /* Editorial sections (Guide page) */
+      #guide-editorial-list { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+      .editorial-item {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.1rem 1.1rem 1.25rem;
+      }
+      .editorial-item__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 0;
+      }
+      .editorial-item__title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--brand);
+        margin: 0;
+      }
+      .editorial-item__field { display: grid; gap: 0.35rem; margin: 0; }
+      .editorial-item__field > label { margin: 0; }
+      .editorial-item__field > input,
+      .editorial-item__field > textarea {
+        display: block;
+        width: 100%;
+      }
+      .editorial-item__field textarea { min-height: 140px; line-height: 1.5; }
+      .editorial-item__hint {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin: 0;
+      }
+
       /* Progress Bar */
       .save-progress {
         position: fixed;
@@ -1039,26 +1077,39 @@ const initialContactPhoneRows = (content.contact.phones || [])
           .filter((entry) => entry.image);
       }
 
+      function renumberEditorialItems() {
+        if (!guideEditorialList) return;
+        const items = guideEditorialList.querySelectorAll(".editorial-item");
+        items.forEach((node, index) => {
+          const title = node.querySelector(".editorial-item__title");
+          if (title) title.textContent = `Bagian redaksi #${index + 1}`;
+        });
+      }
+
       function createGuideEditorialItem(section = { heading: "", body: "", bullets: [] }) {
         if (!guideEditorialList) return;
         const item = document.createElement("article");
-        item.className = "speaker-item guide-editorial-item";
-        item.innerHTML = `
-          <h3>Bagian redaksi</h3>
-          <label>Judul blok (tampil sebagai H2) <input data-key="heading" type="text" required /></label>
-          <label style="margin-top: 0.5rem;">Isi (paragraf)
-            <textarea data-key="body" rows="8" required placeholder="Paragraf pertama.
-
-
-Paragraf berikutnya — pisahkan dengan baris kosong."></textarea>
-          </label>
-          <label style="margin-top: 0.5rem;">Daftar poin (opsional, satu baris = satu bullet)
-            <textarea data-key="bullets" rows="5" placeholder="Kosongkan jika tidak perlu daftar."></textarea>
-          </label>
-          <div class="speaker-actions" style="margin-top: 0.5rem;">
-            <button class="btn-secondary" type="button" data-action="remove-editorial">Hapus bagian</button>
-          </div>
-        `;
+        item.className = "editorial-item";
+        item.innerHTML = [
+          '<header class="editorial-item__header">',
+          '  <h4 class="editorial-item__title">Bagian redaksi</h4>',
+          '  <button class="btn btn-secondary" type="button" data-action="remove-editorial" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">Hapus bagian</button>',
+          '</header>',
+          '<div class="editorial-item__field">',
+          '  <label>Judul blok (tampil sebagai H2)</label>',
+          '  <input data-key="heading" type="text" required placeholder="Misal: Panduan Penulis" />',
+          '</div>',
+          '<div class="editorial-item__field">',
+          '  <label>Isi (paragraf)</label>',
+          '  <textarea data-key="body" rows="8" required></textarea>',
+          '  <p class="editorial-item__hint">Pisahkan paragraf dengan satu baris kosong (Enter dua kali).</p>',
+          '</div>',
+          '<div class="editorial-item__field">',
+          '  <label>Daftar poin (opsional)</label>',
+          '  <textarea data-key="bullets" rows="5" placeholder="Satu baris = satu poin. Kosongkan jika tidak perlu."></textarea>',
+          '  <p class="editorial-item__hint">Kalau diisi, akan ditampilkan sebagai bullet list di halaman Panduan.</p>',
+          '</div>',
+        ].join("\n");
         const headingInput = item.querySelector('[data-key="heading"]');
         const bodyTa = item.querySelector('[data-key="body"]');
         const bulletsTa = item.querySelector('[data-key="bullets"]');
@@ -1068,11 +1119,12 @@ Paragraf berikutnya — pisahkan dengan baris kosong."></textarea>
           bulletsTa.value = Array.isArray(section.bullets) ? section.bullets.join("\n") : "";
         }
         guideEditorialList.appendChild(item);
+        renumberEditorialItems();
       }
 
       function readGuideEditorialSections() {
         if (!guideEditorialList) return [];
-        return [...guideEditorialList.querySelectorAll(".guide-editorial-item")]
+        return [...guideEditorialList.querySelectorAll(".editorial-item")]
           .map((item) => {
             const heading = item.querySelector('[data-key="heading"]')?.value?.trim() ?? "";
             const body = item.querySelector('[data-key="body"]')?.value?.trim() ?? "";
@@ -1094,7 +1146,8 @@ Paragraf berikutnya — pisahkan dengan baris kosong."></textarea>
         const target = event.target;
         if (!(target instanceof HTMLElement)) return;
         if (target.getAttribute("data-action") === "remove-editorial") {
-          target.closest(".guide-editorial-item")?.remove();
+          target.closest(".editorial-item")?.remove();
+          renumberEditorialItems();
         }
       });
 
