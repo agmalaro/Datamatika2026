@@ -113,7 +113,19 @@ export function login(cookies: AstroCookies, username: string, password: string)
 }
 
 export function logout(cookies: AstroCookies): void {
-  cookies.delete(COOKIE_NAME, { path: "/" });
+  const secure = import.meta.env.PROD;
+  const base = {
+    path: "/" as const,
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+  };
+  // Must match attributes used in login(); otherwise browsers keep the Secure cookie and /admin/login still sees a session.
+  cookies.delete(COOKIE_NAME, base);
+  cookies.set(COOKIE_NAME, "", {
+    ...base,
+    maxAge: 0,
+  });
 }
 
 export function changePassword(currentPassword: string, nextPassword: string): { ok: boolean; message: string } {
