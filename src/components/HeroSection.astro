@@ -8,11 +8,12 @@ const { eventStartsAt, eventDateLabel } = siteMeta;
 const heroLogoStyle: "glass" | "plain" = "glass";
 const heroBackground = siteMeta.heroBg || images.heroBg;
 const heroLogo = siteMeta.heroLogo || datamatikaWordmark.src;
+const heroEyebrow = siteMeta.heroEyebrow?.trim() || "SSMI IPB MEMPERSEMBAHKAN";
 ---
 
 <section id="beranda" class="hero" style={`--hero-bg: url('${heroBackground}')`}>
   <div class="hero__inner">
-    <span class="hero__eyebrow">SSMI IPB MEMPERSEMBAHKAN</span>
+    <span class="hero__eyebrow">{heroEyebrow}</span>
     <img
       class:list={["hero__brand-mark", heroLogoStyle === "plain" && "hero__brand-mark--plain"]}
       src={heroLogo}

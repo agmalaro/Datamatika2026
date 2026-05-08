@@ -8,6 +8,7 @@ export const defaultSiteContent: SiteContent = {
     publishedUrl: "https://apps.ipb.ac.id/seminar-nasional-ssmi-2025/home",
     registrationUrl: "https://conference.ipb.ac.id/datamatika/about/submissions",
     orgLine: "Seminar Nasional SSMI · IPB University",
+    heroEyebrow: "SSMI IPB MEMPERSEMBAHKAN",
     heroBg: "",
     heroLogo: "",
     mapsAddress: "IPB University, Dramaga, Bogor, Jawa Barat",

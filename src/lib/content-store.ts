@@ -75,6 +75,7 @@ function sanitizeContent(value: unknown): SiteContent {
       publishedUrl: sanitizeString(siteMetaValue.publishedUrl, defaultSiteContent.siteMeta.publishedUrl),
       registrationUrl: sanitizeString(siteMetaValue.registrationUrl, defaultSiteContent.siteMeta.registrationUrl),
       orgLine: sanitizeString(siteMetaValue.orgLine, defaultSiteContent.siteMeta.orgLine),
+      heroEyebrow: sanitizeString(siteMetaValue.heroEyebrow, defaultSiteContent.siteMeta.heroEyebrow),
       heroBg: typeof siteMetaValue.heroBg === "string" ? siteMetaValue.heroBg.trim() : "",
       heroLogo: typeof siteMetaValue.heroLogo === "string" ? siteMetaValue.heroLogo.trim() : "",
       mapsAddress: sanitizeString(siteMetaValue.mapsAddress, defaultSiteContent.siteMeta.mapsAddress ?? ""),

@@ -4,6 +4,7 @@ export type SiteMetaContent = {
   publishedUrl: string;
   registrationUrl: string;
   orgLine: string;
+  heroEyebrow: string;
   heroBg?: string;
   heroLogo?: string;
   mapsAddress?: string;
