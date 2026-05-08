@@ -101,12 +101,26 @@ export type ContactContent = {
   email: string;
 };
 
+export type FooterProgramLinkContent = {
+  label: string;
+  href: string;
+};
+
+export type FooterContent = {
+  kicker: string;
+  programLinks: FooterProgramLinkContent[];
+  bannerImage: string;
+  bannerAlt: string;
+  copyright: string;
+};
+
 export type SiteContent = {
   siteMeta: SiteMetaContent;
   about: AboutContent;
   timeline: TimelineItemContent[];
   uploadNote: UploadNoteContent;
   contact: ContactContent;
+  footer: FooterContent;
   guide: GuideContent;
   agenda: AgendaContent;
   timelineImage?: string;

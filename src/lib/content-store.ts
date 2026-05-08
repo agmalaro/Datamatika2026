@@ -37,6 +37,16 @@ function sanitizeContent(value: unknown): SiteContent {
   const uploadNoteValue = isRecord(value.uploadNote) ? value.uploadNote : {};
   const contactValue = isRecord(value.contact) ? value.contact : {};
   const contactPhonesValue = Array.isArray(contactValue.phones) ? contactValue.phones : [];
+  const footerValue = isRecord(value.footer) ? value.footer : {};
+  const footerProgramLinksRaw = Array.isArray(footerValue.programLinks) ? footerValue.programLinks : [];
+  const footerProgramLinksSanitized = footerProgramLinksRaw
+    .filter(isRecord)
+    .map((item) => ({
+      label: typeof item.label === "string" ? item.label.trim() : "",
+      href: typeof item.href === "string" ? item.href.trim() : "",
+    }))
+    .filter((item) => item.label && item.href);
+
   const guideValue = isRecord(value.guide) ? value.guide : {};
   const guideFeeValue = isRecord(guideValue.fee) ? guideValue.fee : {};
   const guideEditorialRaw = Array.isArray(guideValue.editorialSections) ? guideValue.editorialSections : [];
@@ -127,6 +137,14 @@ function sanitizeContent(value: unknown): SiteContent {
               }))
           : defaultSiteContent.contact.phones,
       email: sanitizeString(contactValue.email, defaultSiteContent.contact.email),
+    },
+    footer: {
+      kicker: sanitizeString(footerValue.kicker, defaultSiteContent.footer.kicker),
+      programLinks:
+        footerProgramLinksSanitized.length > 0 ? footerProgramLinksSanitized : defaultSiteContent.footer.programLinks,
+      bannerImage: typeof footerValue.bannerImage === "string" ? footerValue.bannerImage.trim() : "",
+      bannerAlt: sanitizeString(footerValue.bannerAlt, defaultSiteContent.footer.bannerAlt),
+      copyright: sanitizeString(footerValue.copyright, defaultSiteContent.footer.copyright),
     },
     timelineImage: timelineImageValue.trim(),
     speakers: speakersValue

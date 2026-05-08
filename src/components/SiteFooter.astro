@@ -1,15 +1,19 @@
 ---
 import { getSiteData, images } from "../data/site";
 
-const { footerPartners, contact } = await getSiteData();
+const { footerPartners, contact, footer } = await getSiteData();
 
-const programLinks = [
-  { label: "Statistika", href: "https://stat.ipb.ac.id/" },
-  { label: "Matematika", href: "https://math.ipb.ac.id/" },
-  { label: "Ilmu Komputer", href: "https://cs.ipb.ac.id/" },
-  { label: "Aktuaria", href: "https://aktuaria.ipb.ac.id/" },
-  { label: "Kecerdasan Buatan", href: "https://ai.ipb.ac.id/" },
-] as const;
+const programLinks =
+  footer.programLinks && footer.programLinks.length > 0
+    ? footer.programLinks
+    : [{ label: "Statistika", href: "https://stat.ipb.ac.id/" }];
+const footerKicker = footer.kicker?.trim() || "Program studi & bidang";
+const footerBanner = footer.bannerImage?.trim() || images.footerSsmiBanner;
+const footerBannerAlt =
+  footer.bannerAlt?.trim() ||
+  "IPB University Bogor Indonesia; Sekolah Sains Data, Matematika, dan Informatika";
+const footerCopyright =
+  footer.copyright?.trim() || "© Copyright SSMI. IPB University, Bogor, Jawa Barat.";
 
 /** Lebar piksel aset banner (600×110) — jangan di-upscale agar teks tetap tajam */
 const footerBannerWidth = 600;
@@ -100,7 +104,7 @@ const footerBannerHeight = 110;
 
         <div class="footer-host__brand-panel">
           <div class="footer-host__brand-content">
-            <p class="footer-host__panel-kicker">Program studi &amp; bidang</p>
+            <p class="footer-host__panel-kicker">{footerKicker}</p>
             <ul class="footer-host__tags" aria-label="Rumpun keilmuan SSMI">
               {
                 programLinks.map((item) => (
@@ -110,7 +114,6 @@ const footerBannerHeight = 110;
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={item.label === "AI" ? "Kecerdasan Buatan" : undefined}
                     >
                       {item.label}
                     </a>
@@ -121,8 +124,8 @@ const footerBannerHeight = 110;
             <div class="footer-host__banner-wrap">
               <img
                 class="footer-host__brand-banner"
-                src={images.footerSsmiBanner}
-                alt="IPB University Bogor Indonesia; Sekolah Sains Data, Matematika, dan Informatika"
+                src={footerBanner}
+                alt={footerBannerAlt}
                 width={footerBannerWidth}
                 height={footerBannerHeight}
                 sizes={`(max-width: ${footerBannerWidth}px) 100vw, ${footerBannerWidth}px`}
@@ -136,6 +139,6 @@ const footerBannerHeight = 110;
     </div>
   </section>
 
-  <p class="footer-meta">© Copyright SSMI. IPB University, Bogor, Jawa Barat.</p>
+  <p class="footer-meta">{footerCopyright}</p>
 </footer>
 

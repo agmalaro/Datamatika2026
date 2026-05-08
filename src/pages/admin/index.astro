@@ -72,6 +72,7 @@ const initialTimelineImage = content.timelineImage?.trim() || "";
 const initialGuideFlowImage = content.guide.flowImage?.trim() || "";
 const initialGuideFlowSteps = (content.guide.flowSteps || []).join("\n");
 const initialGuideEditorial = content.guide.editorialSections;
+const initialFooterPrograms = content.footer.programLinks;
 const initialAgendaRows = (content.agenda.items || [])
   .map((item) => [item.day, item.time, item.agenda, item.detail || ""].join("|"))
   .join("\n");
@@ -473,6 +474,48 @@ const initialContactPhoneRows = (content.contact.phones || [])
         color: #6b7280;
         margin: 0;
       }
+
+      /* Footer program link rows */
+      #footer-program-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .footer-program-row {
+        display: grid;
+        grid-template-columns: 1fr 1.4fr auto;
+        gap: 0.6rem;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.65rem 0.75rem;
+      }
+      .footer-program-row > input {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.55rem 0.85rem;
+        font-size: 0.92rem;
+        font-family: inherit;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+      }
+      .footer-program-row__remove {
+        padding: 0.5rem 0.85rem;
+        font-size: 0.8rem;
+        background: #fff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        color: #1e293b;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .footer-program-row__remove:hover { border-color: #c04800; color: #c04800; }
+      @media (max-width: 600px) {
+        .footer-program-row { grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body>
@@ -502,7 +545,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
           <a href="#section-papers" class="sidebar-link">Call for Papers</a>
           <a href="#section-agenda" class="sidebar-link">Agenda Page</a>
           <a href="#section-guide" class="sidebar-link">Guide Page</a>
-          <a href="#section-contact" class="sidebar-link">Contact</a>
+          <a href="#section-contact" class="sidebar-link">Contact &amp; Footer</a>
           <a href="#section-speakers" class="sidebar-link">Speakers</a>
           <a href="#section-partners" class="sidebar-link">Partners</a>
           <a href="#section-gallery" class="sidebar-link">Gallery</a>
@@ -739,19 +782,63 @@ const initialContactPhoneRows = (content.contact.phones || [])
           </section>
 
           <section class="card" id="section-contact">
-            <h2>Contact Section</h2>
+            <h2>Contact &amp; Footer</h2>
             <div class="fields">
-              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <label>Heading <input name="contactHeading" value={content.contact.heading} required /></label>
-                <label>Email <input name="contactEmail" type="email" value={content.contact.email} required /></label>
+              <div class="form-group">
+                <h3 class="admin-subheading">Kontak</h3>
+                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                  <label>Heading <input name="contactHeading" value={content.contact.heading} required /></label>
+                  <label>Email <input name="contactEmail" type="email" value={content.contact.email} required /></label>
+                </div>
+                <label style="margin-top: 0.75rem;">Address
+                  <textarea name="contactAddress" required style="min-height: 90px;">{content.contact.address}</textarea>
+                </label>
+                <label style="margin-top: 0.75rem;">Phones (Format: NAME|TEL|DISPLAY)
+                  <textarea name="contactPhones" required style="font-family: monospace; font-size: 0.9rem; min-height: 130px;">{initialContactPhoneRows}</textarea>
+                  <span class="meta-note">One contact per line. Example: Enon|+6281311679203|0813-1167-9203</span>
+                </label>
               </div>
-              <label>Address
-                <textarea name="contactAddress" required style="min-height: 90px;">{content.contact.address}</textarea>
-              </label>
-              <label>Phones (Format: NAME|TEL|DISPLAY)
-                <textarea name="contactPhones" required style="font-family: monospace; font-size: 0.9rem; min-height: 130px;">{initialContactPhoneRows}</textarea>
-                <span class="meta-note">One contact per line. Example: Enon|+6281311679203|0813-1167-9203</span>
-              </label>
+
+              <div class="form-group" style="border-top: 1px solid var(--line); padding-top: 1.5rem;">
+                <h3 class="admin-subheading">Footer Brand</h3>
+                <p class="meta-note" style="margin-bottom: 1rem;">
+                  Bagian bawah situs: kicker, daftar program studi/bidang (chip), banner, dan teks copyright.
+                </p>
+                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                  <label>Kicker (judul kecil di atas chip)
+                    <input name="footerKicker" value={content.footer.kicker} required />
+                  </label>
+                  <label>Copyright
+                    <input name="footerCopyright" value={content.footer.copyright} required />
+                  </label>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                  <label>Program studi &amp; bidang (chip)</label>
+                  <p class="meta-note" style="margin-top: 0.25rem;">Tiap chip butuh Label &amp; URL. Tombol di bawah untuk tambah/hapus.</p>
+                  <div id="footer-program-list" style="margin-top: 0.75rem;"></div>
+                  <button class="btn btn-secondary" id="add-footer-program-btn" type="button" style="margin-top: 0.5rem;">+ Tambah chip</button>
+                </div>
+
+                <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap: 1.5rem; margin-top: 1.25rem; align-items: start;">
+                  <div class="form-group">
+                    <label>Footer banner (URL terisi otomatis setelah unggah)</label>
+                    <input id="footer-banner-url" name="footerBannerImage" value={content.footer.bannerImage} placeholder="Kosongkan untuk pakai aset bawaan" />
+                    <label style="margin-top: 0.75rem;">Alt text banner
+                      <input name="footerBannerAlt" value={content.footer.bannerAlt} required />
+                    </label>
+                    <span class="meta-note" style="display: block; margin-top: 0.5rem;">Rekomendasi 600x110 (atau rasio mirip). PNG/WEBP transparan paling rapi.</span>
+                  </div>
+                  <div class="form-group">
+                    <label>Preview banner</label>
+                    <img id="footer-banner-preview" class="speaker-preview" src={content.footer.bannerImage || "/patterns/empty.svg"} alt="Preview footer banner" style="height: 110px; width: 100%; object-fit: contain; background: #fff;" />
+                    <div class="speaker-actions" style="margin-top: 0.75rem;">
+                      <input id="footer-banner-file" type="file" accept="image/*" />
+                      <button class="btn btn-secondary" id="upload-footer-banner-btn" type="button">Upload Banner</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -810,6 +897,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
         initialTimelineImage,
         initialGuideFlowImage,
         initialGuideEditorial,
+        initialFooterPrograms,
       }}
     >
       const form = document.getElementById("admin-form");
@@ -851,6 +939,12 @@ const initialContactPhoneRows = (content.contact.phones || [])
       const guideFeePaidGroup = document.getElementById("guide-fee-paid-group");
       const guideEditorialList = document.getElementById("guide-editorial-list");
       const addGuideEditorialBtn = document.getElementById("add-guide-editorial-btn");
+      const footerProgramList = document.getElementById("footer-program-list");
+      const addFooterProgramBtn = document.getElementById("add-footer-program-btn");
+      const footerBannerUrlInput = document.getElementById("footer-banner-url");
+      const footerBannerFileInput = document.getElementById("footer-banner-file");
+      const footerBannerPreview = document.getElementById("footer-banner-preview");
+      const uploadFooterBannerBtn = document.getElementById("upload-footer-banner-btn");
       const changePasswordBtn = document.getElementById("change-password-btn");
       const currentPasswordInput = document.getElementById("currentPassword");
       const nextPasswordInput = document.getElementById("nextPassword");
@@ -866,6 +960,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
       const partnerSeeds = Array.isArray(initialPartners) ? initialPartners : [];
       const gallerySeeds = Array.isArray(initialGallery) ? initialGallery : [];
       const editorialSeeds = Array.isArray(initialGuideEditorial) ? initialGuideEditorial : [];
+      const footerProgramSeeds = Array.isArray(initialFooterPrograms) ? initialFooterPrograms : [];
       let toastTimer = null;
 
       // Sidebar logic
@@ -1160,10 +1255,42 @@ const initialContactPhoneRows = (content.contact.phones || [])
           .filter((s) => s.heading && (s.body.length > 0 || s.bullets.length > 0));
       }
 
+      function createFooterProgramRow(item = { label: "", href: "" }) {
+        if (!footerProgramList) return;
+        const row = document.createElement("div");
+        row.className = "footer-program-row";
+        row.innerHTML = [
+          '<input data-key="label" type="text" placeholder="Label chip (mis. Statistika)" required />',
+          '<input data-key="href" type="url" placeholder="https://..." required />',
+          '<button class="footer-program-row__remove" type="button" data-action="remove-footer-program">Hapus</button>',
+        ].join("");
+        const labelInput = row.querySelector('[data-key="label"]');
+        const hrefInput = row.querySelector('[data-key="href"]');
+        if (labelInput instanceof HTMLInputElement) labelInput.value = item.label ?? "";
+        if (hrefInput instanceof HTMLInputElement) hrefInput.value = item.href ?? "";
+        footerProgramList.appendChild(row);
+      }
+
+      function readFooterPrograms() {
+        if (!footerProgramList) return [];
+        return [...footerProgramList.querySelectorAll(".footer-program-row")]
+          .map((row) => ({
+            label: row.querySelector('[data-key="label"]')?.value?.trim() ?? "",
+            href: row.querySelector('[data-key="href"]')?.value?.trim() ?? "",
+          }))
+          .filter((entry) => entry.label && entry.href);
+      }
+
+      function setFooterBannerPreview(url) {
+        if (!(footerBannerPreview instanceof HTMLImageElement)) return;
+        setPreviewSource(footerBannerPreview, url);
+      }
+
       for (const speaker of speakerSeeds) createSpeakerItem(speaker);
       for (const partner of partnerSeeds) createPartnerItem(partner);
       for (const entry of gallerySeeds) createGalleryItem(entry);
       for (const sec of editorialSeeds) createGuideEditorialItem(sec);
+      for (const program of footerProgramSeeds) createFooterProgramRow(program);
 
       guideEditorialList?.addEventListener("click", (event) => {
         const target = event.target;
@@ -1174,12 +1301,60 @@ const initialContactPhoneRows = (content.contact.phones || [])
         }
       });
 
+      footerProgramList?.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.getAttribute("data-action") === "remove-footer-program") {
+          target.closest(".footer-program-row")?.remove();
+        }
+      });
+
       addSpeakerBtn?.addEventListener("click", () => createSpeakerItem());
       addPartnerBtn?.addEventListener("click", () => createPartnerItem());
       addGalleryBtn?.addEventListener("click", () => createGalleryItem());
       addGuideEditorialBtn?.addEventListener("click", () =>
         createGuideEditorialItem({ heading: "", body: "", bullets: [] })
       );
+      addFooterProgramBtn?.addEventListener("click", () => createFooterProgramRow({ label: "", href: "" }));
+
+      footerBannerFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        setFooterBannerPreview(URL.createObjectURL(target.files[0]));
+        if (uploadFooterBannerBtn) uploadFooterBannerBtn.textContent = "Klik lagi untuk mengunggah";
+      });
+
+      uploadFooterBannerBtn?.addEventListener("click", async () => {
+        if (!(footerBannerFileInput instanceof HTMLInputElement) || !footerBannerFileInput.files?.length) {
+          footerBannerFileInput?.click();
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", footerBannerFileInput.files[0]);
+        formData.append("uploadType", "footerBanner");
+
+        uploadFooterBannerBtn.setAttribute("disabled", "true");
+        uploadFooterBannerBtn.textContent = "Uploading...";
+        const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
+        uploadFooterBannerBtn.removeAttribute("disabled");
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          setStatus(data.message ?? "Upload gagal.", "err");
+          showToast(data.message ?? "Upload gagal.", "err");
+          uploadFooterBannerBtn.textContent = "Upload Banner";
+          return;
+        }
+
+        const data = await response.json();
+        if (footerBannerUrlInput instanceof HTMLInputElement) footerBannerUrlInput.value = data.url;
+        setFooterBannerPreview(data.url);
+        if (footerBannerFileInput instanceof HTMLInputElement) footerBannerFileInput.value = "";
+        uploadFooterBannerBtn.textContent = "Upload Banner";
+        setStatus("Footer banner berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+        showToast("Footer banner berhasil diunggah dan ditampilkan.", "ok");
+      });
       eventStartsAtInput?.addEventListener("change", updateEventDatePreview);
       eventStartsAtInput?.addEventListener("input", updateEventDatePreview);
       updateEventDatePreview();
@@ -1714,6 +1889,13 @@ const initialContactPhoneRows = (content.contact.phones || [])
             address: form.contactAddress.value,
             phones: contactPhones,
             email: form.contactEmail.value,
+          },
+          footer: {
+            kicker: form.footerKicker.value,
+            programLinks: readFooterPrograms(),
+            bannerImage: form.footerBannerImage.value,
+            bannerAlt: form.footerBannerAlt.value,
+            copyright: form.footerCopyright.value,
           },
           guide: {
             pageTitle: form.guidePageTitle.value,

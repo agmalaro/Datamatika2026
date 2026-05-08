@@ -67,6 +67,7 @@ export async function getSiteData() {
     timeline: content.timeline as TimelineItem[],
     uploadNote: content.uploadNote,
     contact: content.contact,
+    footer: content.footer,
     guide: content.guide,
     agenda: {
       title: content.agenda?.title || "Agenda Seminar DATAMATIKA 2026",

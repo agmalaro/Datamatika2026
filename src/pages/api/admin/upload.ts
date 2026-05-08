@@ -24,6 +24,7 @@ const UPLOAD_TYPE_TO_DIR: Record<string, string> = {
   partner: "partners",
   gallery: "gallery",
   guideTemplate: "files",
+  footerBanner: "footer",
 };
 
 function sanitizeFilename(input: string): string {

@@ -45,6 +45,19 @@ export const defaultSiteContent: SiteContent = {
     ],
     email: "ssmi@apps.ipb.ac.id",
   },
+  footer: {
+    kicker: "Program studi & bidang",
+    programLinks: [
+      { label: "Statistika", href: "https://stat.ipb.ac.id/" },
+      { label: "Matematika", href: "https://math.ipb.ac.id/" },
+      { label: "Ilmu Komputer", href: "https://cs.ipb.ac.id/" },
+      { label: "Aktuaria", href: "https://aktuaria.ipb.ac.id/" },
+      { label: "Kecerdasan Buatan", href: "https://ai.ipb.ac.id/" },
+    ],
+    bannerImage: "",
+    bannerAlt: "IPB University Bogor Indonesia; Sekolah Sains Data, Matematika, dan Informatika",
+    copyright: "© Copyright SSMI. IPB University, Bogor, Jawa Barat.",
+  },
   guide: {
     pageTitle: "Panduan Submit Artikel Seminar",
     pageIntro:
