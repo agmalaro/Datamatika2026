@@ -633,8 +633,9 @@ const initialContactPhoneRows = (content.contact.phones || [])
                 <div class="form-group">
                   <label>Template Label</label>
                   <input name="guideTemplateLabel" value={content.guide.templateLabel} required />
-                  <label style="margin-top: 1rem;">Article Template File</label>
+                  <label style="margin-top: 1rem;">Article Template File (URL terisi otomatis setelah unggah)</label>
                   <input id="guide-template-url" name="guideTemplateUrl" value={content.guide.templateUrl} required />
+                  <span class="meta-note" style="display: block; margin-top: 0.35rem;">Pilih file .doc / .docx / .pdf dari komputer: klik tombol di bawah (jendela file akan terbuka), lalu klik tombol yang sama sekali lagi untuk mengunggah.</span>
                   <div class="speaker-actions" style="margin-top: 0.5rem;">
                     <input id="guide-template-file" type="file" accept=".doc,.docx,.pdf" />
                     <button class="btn btn-secondary" id="upload-guide-template-btn" type="button">Upload Template</button>
@@ -1168,6 +1169,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
         const target = event.target;
         if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
         setTimelineImagePreview(URL.createObjectURL(target.files[0]));
+        if (uploadTimelineImageBtn) uploadTimelineImageBtn.textContent = "Klik lagi untuk mengunggah";
       });
 
       guideFeeTypeInput?.addEventListener("change", syncGuideFeeFields);
@@ -1176,12 +1178,18 @@ const initialContactPhoneRows = (content.contact.phones || [])
         const target = event.target;
         if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
         setGuideFlowImagePreview(URL.createObjectURL(target.files[0]));
+        if (uploadGuideFlowImageBtn) uploadGuideFlowImageBtn.textContent = "Klik lagi untuk mengunggah";
+      });
+
+      guideTemplateFileInput?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+        if (uploadGuideTemplateBtn) uploadGuideTemplateBtn.textContent = "Klik lagi untuk mengunggah";
       });
 
       uploadTimelineImageBtn?.addEventListener("click", async () => {
         if (!(timelineImageFileInput instanceof HTMLInputElement) || !timelineImageFileInput.files?.length) {
-          setStatus("Pilih gambar Timeline dulu sebelum upload.", "err");
-          showToast("Pilih gambar Timeline dulu sebelum upload.", "err");
+          timelineImageFileInput?.click();
           return;
         }
 
@@ -1208,14 +1216,15 @@ const initialContactPhoneRows = (content.contact.phones || [])
         const data = await response.json();
         if (timelineImageUrlInput instanceof HTMLInputElement) timelineImageUrlInput.value = data.url;
         setTimelineImagePreview(data.url);
+        if (timelineImageFileInput instanceof HTMLInputElement) timelineImageFileInput.value = "";
+        if (uploadTimelineImageBtn) uploadTimelineImageBtn.textContent = "Upload Gambar Timeline";
         setStatus("Gambar Timeline berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
         showToast("Gambar Timeline berhasil diunggah dan ditampilkan.", "ok");
       });
 
       uploadGuideFlowImageBtn?.addEventListener("click", async () => {
         if (!(guideFlowImageFileInput instanceof HTMLInputElement) || !guideFlowImageFileInput.files?.length) {
-          setStatus("Pilih gambar alur panduan dulu sebelum upload.", "err");
-          showToast("Pilih gambar alur panduan dulu sebelum upload.", "err");
+          guideFlowImageFileInput?.click();
           return;
         }
 
@@ -1242,14 +1251,15 @@ const initialContactPhoneRows = (content.contact.phones || [])
         const data = await response.json();
         if (guideFlowImageUrlInput instanceof HTMLInputElement) guideFlowImageUrlInput.value = data.url;
         setGuideFlowImagePreview(data.url);
+        if (guideFlowImageFileInput instanceof HTMLInputElement) guideFlowImageFileInput.value = "";
+        if (uploadGuideFlowImageBtn) uploadGuideFlowImageBtn.textContent = "Upload Gambar Alur";
         setStatus("Gambar alur panduan berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
         showToast("Gambar alur panduan berhasil diunggah dan ditampilkan.", "ok");
       });
 
       uploadGuideTemplateBtn?.addEventListener("click", async () => {
         if (!(guideTemplateFileInput instanceof HTMLInputElement) || !guideTemplateFileInput.files?.length) {
-          setStatus("Pilih file template dulu sebelum upload.", "err");
-          showToast("Pilih file template dulu sebelum upload.", "err");
+          guideTemplateFileInput?.click();
           return;
         }
 
@@ -1275,6 +1285,8 @@ const initialContactPhoneRows = (content.contact.phones || [])
 
         const data = await response.json();
         if (guideTemplateUrlInput instanceof HTMLInputElement) guideTemplateUrlInput.value = data.url;
+        if (guideTemplateFileInput instanceof HTMLInputElement) guideTemplateFileInput.value = "";
+        if (uploadGuideTemplateBtn) uploadGuideTemplateBtn.textContent = "Upload Template";
         setStatus("Template artikel berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
         showToast("Template artikel berhasil diunggah dan siap digunakan.", "ok");
       });
