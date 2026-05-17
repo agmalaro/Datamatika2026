@@ -22,15 +22,22 @@ create table if not exists public.site_content (
 
 ## 3) Add environment variables
 
-Add these variables in Vercel/Netlify project settings:
+**Localhost (`npm run dev`) and Docker (`.env.production`)** — use the **same** Supabase project:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_BUCKET` (optional, default: `cms-assets`)
-- `ADMIN_USERNAME`
-- `ADMIN_PASSWORD`
-- `ADMIN_SESSION_SECRET`
-- `DEPLOY_ADAPTER=vercel` (or `netlify`)
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
+- `DEPLOY_ADAPTER=node` (recommended for local + Docker)
+
+Dev loads `.env.production` first, then `.env` (overrides). You can keep credentials only in `.env.production` and run `npm run dev` without duplicating keys.
+
+Verify: open `http://localhost:4321/api/health` — expect `"storage": "supabase"`.
+
+**Vercel/Netlify** (if used):
+
+- Same variables in project settings
+- `DEPLOY_ADAPTER=vercel` or `netlify`
 
 ## 4) Seed initial content (optional)
 

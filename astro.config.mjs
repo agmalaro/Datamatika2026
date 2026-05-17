@@ -1,3 +1,4 @@
+import "./scripts/load-env-files.mjs";
 import { defineConfig } from "astro/config";
 import netlify from "@astrojs/netlify";
 import vercel from "@astrojs/vercel";

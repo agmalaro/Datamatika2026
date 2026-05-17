@@ -5,6 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "astro dev",
+    "dev:node": "astro dev",
+    "env:init": "node -e \"const fs=require('fs'); if(!fs.existsSync('.env')&&fs.existsSync('.env.example')){fs.copyFileSync('.env.example','.env');console.log('Created .env from .env.example — isi SUPABASE_* dan admin.');}else if(fs.existsSync('.env')){console.log('.env sudah ada.');}else{console.log('Salin .env.example ke .env manual.');}\"",
     "build": "astro build",
     "preview": "astro preview",
     "start": "node ./dist/server/entry.mjs"

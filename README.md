@@ -16,15 +16,22 @@ Landing page dan admin CMS untuk DATAMATIKA 2026 dengan runtime Astro SSR (Node 
 
 ## Menjalankan lokal (tanpa Docker)
 
-1. Salin `.env.example` menjadi `.env` lalu isi nilainya.
-2. Jalankan:
+1. Siapkan environment (pilih salah satu):
+   - **Satu file dengan production:** isi `.env.production` (sama seperti Docker), lalu `npm run dev` — dev otomatis memuat `.env.production` jika `.env` belum ada.
+   - **File dev terpisah:** `npm run env:init` lalu edit `.env` — isi `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET` **sama** dengan server production.
+2. Pastikan tabel `site_content` dan bucket Supabase sudah ada (lihat `SUPABASE_SETUP.md`).
+3. Jalankan:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Jika belum ada data auth lokal, default login pertama tetap `admin / admin123`.
+Cek koneksi: `GET http://localhost:4321/api/health` → `"storage": "supabase"`.
+
+Tanpa Supabase, CMS menyimpan ke `src/data/content.local.json` (fallback). Dengan Supabase, konten & upload sama dengan production.
+
+Jika belum ada data auth lokal, default login pertama tetap `admin / admin123` (kecuali `ADMIN_PASSWORD` di env).
 
 ## Menjalankan lokal via Docker Compose
 
