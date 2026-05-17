@@ -64,11 +64,27 @@ Gunakan template `.env.production.example`:
 - `NODE_ENV`, `HOST`, `PORT`
 - `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET`
+- `SITE_URL` — URL publik (mis. `https://datamatika.ipb.ac.id`) agar upload/admin POST tidak kena 403 CSRF di belakang nginx
 
 Catatan:
 
 - Jangan commit `.env.production`.
 - Untuk production, gunakan Supabase agar data/upload tidak tergantung filesystem container.
+
+### Nginx (reverse proxy) — wajib untuk upload CMS
+
+Astro membandingkan header `Origin` dengan URL request. Tanpa header ini, Node melihat `http://127.0.0.1:3000` sementara browser mengirim `https://datamatika.ipb.ac.id` → **403 Cross-site POST form submissions are forbidden**.
+
+Di blok `location` proxy ke container (port 3000), tambahkan:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-Host $host;
+```
+
+Lalu rebuild/restart container setelah `SITE_URL` di `.env.production` sesuai domain publik.
 
 ## Deploy/update di server (Docker Compose)
 
