@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Default aman jika Anda hanya bisa `docker compose up` (tanpa ubah nginx)
+        SITE_URL: ${SITE_URL:-https://datamatika.ipb.ac.id}
+        ASTRO_SECURITY_CHECK_ORIGIN: ${ASTRO_SECURITY_CHECK_ORIGIN:-false}
     container_name: datamatika-app
     restart: unless-stopped
     env_file:
