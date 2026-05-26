@@ -1,0 +1,41 @@
+---
+import { getSiteData } from "../data/site";
+import { PENGUMUMAN_PATH } from "../lib/section-anchors";
+
+const { announcementPage } = await getSiteData();
+const text = announcementPage.homeBannerText?.trim() ?? "";
+const showStrip =
+  announcementPage.enabled &&
+  announcementPage.showHomeBanner &&
+  text.length > 0;
+const buttonLabel =
+  announcementPage.homeBannerButtonLabel?.trim() || "Lihat pengumuman";
+const kicker = announcementPage.navLabel?.trim() || "Pengumuman";
+---
+
+{
+  showStrip && (
+    <aside class="home-announcement" id="pengumuman-beranda" aria-label={kicker}>
+      <div class="wrap home-announcement__wrap">
+        <div class="home-announcement__card reveal">
+          <div class="home-announcement__main">
+            <span class="home-announcement__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </span>
+            <p class="home-announcement__lead">
+              <span class="home-announcement__title">{kicker}</span>
+              <span class="home-announcement__sep" aria-hidden="true"> — </span>
+              <span class="home-announcement__text">{text}</span>
+            </p>
+          </div>
+          <a class="btn btn--primary btn--sm home-announcement__cta" href={PENGUMUMAN_PATH}>
+            {buttonLabel}
+          </a>
+        </div>
+      </div>
+    </aside>
+  )
+}

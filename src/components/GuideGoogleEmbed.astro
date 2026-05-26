@@ -1,0 +1,24 @@
+---
+interface Props {
+  src: string;
+  title: string;
+  kind?: "sheet" | "form";
+}
+
+const { src, title, kind = "form" } = Astro.props;
+---
+
+{
+  src ? (
+    <div class:list={["panduan-embed-wrap", kind === "sheet" && "panduan-embed-wrap--sheet", kind === "form" && "panduan-embed-wrap--form"]}>
+      <iframe
+        class="panduan-embed"
+        src={src}
+        title={title}
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allow="fullscreen"
+      />
+    </div>
+  ) : null
+}

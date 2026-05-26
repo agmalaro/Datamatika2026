@@ -2,6 +2,14 @@
 
 Landing page dan admin CMS untuk DATAMATIKA 2026 dengan runtime Astro SSR (Node adapter) dan storage eksternal Supabase.
 
+## Cadangan konten sebelum publish pengumuman
+
+Sebelum mengaktifkan halaman **Pengumuman** di CMS (hasil seleksi, paralel, poster):
+
+1. Salin cadangan `src/data/content.local.json` (jika pakai storage lokal).
+2. Jika pakai Supabase: export baris `site_content` dan cadangkan file di bucket storage.
+3. Setelah publish, uji menu **Pengumuman**, strip di beranda, dan tab di `/pengumuman`.
+
 ## Fitur utama
 
 - Admin login: `/admin/login`

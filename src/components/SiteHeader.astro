@@ -1,10 +1,16 @@
 ---
-import { images } from "../data/site";
+import { getSiteData, images } from "../data/site";
+import { PANDUAN_NAV_LABEL, PENGUMUMAN_PATH } from "../lib/section-anchors";
+
+const { announcementPage } = await getSiteData();
+const showAnnouncementNav = announcementPage.showInNav;
+const announcementNavLabel = announcementPage.navLabel?.trim() || "Pengumuman";
 
 const isHome = Astro.url.pathname === "/";
 const isGallery = Astro.url.pathname === "/galeri";
 const isMaps = Astro.url.pathname === "/maps";
 const isPanduan = Astro.url.pathname === "/panduan";
+const isPengumuman = Astro.url.pathname === PENGUMUMAN_PATH;
 const isAgenda = Astro.url.pathname === "/agenda";
 const homeHref = (hash: string) => (isHome ? hash : `/${hash}`);
 ---
@@ -37,9 +43,16 @@ const homeHref = (hash: string) => (isHome ? hash : `/${hash}`);
       <a class="site-nav__link" href={homeHref("#contact")} data-nav="contact">Kontak</a>
       <span class="site-nav__divider" aria-hidden="true"></span>
       <a class:list={["site-nav__link", isAgenda && "site-nav__link--active"]} href="/agenda">Agenda</a>
+      <a class:list={["site-nav__link", isPanduan && "site-nav__link--active"]} href="/panduan">{PANDUAN_NAV_LABEL}</a>
+      {
+        showAnnouncementNav && (
+          <a class:list={["site-nav__link", isPengumuman && "site-nav__link--active"]} href={PENGUMUMAN_PATH}>
+            {announcementNavLabel}
+          </a>
+        )
+      }
       <a class:list={["site-nav__link", isMaps && "site-nav__link--active"]} href="/maps">Maps</a>
       <a class:list={["site-nav__link", isGallery && "site-nav__link--active"]} href="/galeri">Galeri</a>
-      <a class:list={["site-nav__link", isPanduan && "site-nav__link--active"]} href="/panduan">Panduan</a>
     </nav>
 
     <button
@@ -71,8 +84,15 @@ const homeHref = (hash: string) => (isHome ? hash : `/${hash}`);
     <a class="nav-drawer__link" href={homeHref("#contact")} data-nav="contact">Kontak</a>
     <div class="nav-drawer__divider" role="separator" aria-hidden="true"></div>
     <a class:list={["nav-drawer__link", isAgenda && "nav-drawer__link--active"]} href="/agenda">Agenda</a>
+    <a class:list={["nav-drawer__link", isPanduan && "nav-drawer__link--active"]} href="/panduan">{PANDUAN_NAV_LABEL}</a>
+    {
+      showAnnouncementNav && (
+        <a class:list={["nav-drawer__link", isPengumuman && "nav-drawer__link--active"]} href={PENGUMUMAN_PATH}>
+          {announcementNavLabel}
+        </a>
+      )
+    }
     <a class:list={["nav-drawer__link", isMaps && "nav-drawer__link--active"]} href="/maps">Maps</a>
     <a class:list={["nav-drawer__link", isGallery && "nav-drawer__link--active"]} href="/galeri">Galeri</a>
-    <a class:list={["nav-drawer__link", isPanduan && "nav-drawer__link--active"]} href="/panduan">Panduan</a>
   </nav>
 </header>

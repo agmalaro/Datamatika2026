@@ -20,6 +20,7 @@ const UPLOAD_TYPE_TO_DIR: Record<string, string> = {
   aboutImage: "about",
   timelineImage: "timeline",
   guideFlowImage: "guide",
+  guideEditorialImage: "guide",
   speaker: "speakers",
   partner: "partners",
   gallery: "gallery",

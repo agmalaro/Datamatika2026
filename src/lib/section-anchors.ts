@@ -1,3 +1,8 @@
+/** Label menu & dropdown untuk halaman /panduan */
+export const PANDUAN_NAV_LABEL = "Panduan & Informasi";
+
+export const PENGUMUMAN_PATH = "/pengumuman";
+
 /** Section ids on the landing page — keep in sync with `SiteHeader` and section components. */
 export const LANDING_SECTION_HASHES: { value: string; label: string }[] = [
   { value: "#beranda", label: "Beranda" },
@@ -11,9 +16,10 @@ export const LANDING_SECTION_HASHES: { value: string; label: string }[] = [
 export const SECONDARY_URL_OPTIONS: { value: string; label: string }[] = [
   ...LANDING_SECTION_HASHES,
   { value: "/agenda", label: "Agenda" },
+  { value: "/panduan", label: PANDUAN_NAV_LABEL },
+  { value: PENGUMUMAN_PATH, label: "Pengumuman" },
   { value: "/maps", label: "Maps" },
   { value: "/galeri", label: "Galeri" },
-  { value: "/panduan", label: "Panduan" },
 ];
 
 const CANON = new Map(SECONDARY_URL_OPTIONS.map((item) => [item.value.toLowerCase(), item.value]));

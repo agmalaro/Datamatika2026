@@ -49,6 +49,17 @@ export type GalleryItemContent = {
   image?: string;
 };
 
+export type GallerySectionContent = {
+  id: string;
+  label: string;
+  items: GalleryItemContent[];
+};
+
+export type GalleryPageContent = {
+  title: string;
+  sections: GallerySectionContent[];
+};
+
 export type GuideFeeContent = {
   type: "free" | "paid";
   freeText: string;
@@ -62,6 +73,10 @@ export type GuideEditorialSectionContent = {
   heading: string;
   body: string;
   bullets: string[];
+  image?: string;
+  imageAlt?: string;
+  sheetEmbedUrl?: string;
+  formEmbedUrl?: string;
 };
 
 export type GuideContent = {
@@ -74,6 +89,33 @@ export type GuideContent = {
   templateLabel: string;
   templateUrl: string;
   fee: GuideFeeContent;
+};
+
+export type AnnouncementLinkContent = {
+  label: string;
+  href: string;
+};
+
+/** Blok tab di halaman /pengumuman — body: paragraf dipisahkan baris kosong ganda (\\n\\n). */
+export type AnnouncementSectionContent = {
+  id: string;
+  label: string;
+  body: string;
+  bullets: string[];
+  sheetEmbedUrl?: string;
+  links: AnnouncementLinkContent[];
+  gallerySectionId?: string;
+};
+
+export type AnnouncementPageContent = {
+  enabled: boolean;
+  showHomeBanner: boolean;
+  homeBannerText: string;
+  homeBannerButtonLabel: string;
+  navLabel: string;
+  title: string;
+  intro: string;
+  sections: AnnouncementSectionContent[];
 };
 
 export type AgendaItemContent = {
@@ -127,5 +169,6 @@ export type SiteContent = {
   timelineImage?: string;
   speakers: SpeakerContent[];
   partners: PartnerContent[];
-  gallery: GalleryItemContent[];
+  galleryPage: GalleryPageContent;
+  announcementPage: AnnouncementPageContent;
 };

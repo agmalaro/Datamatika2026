@@ -16,8 +16,9 @@ const isKnownUploadNoteSecondary = SECONDARY_URL_OPTIONS.some(
   (o) => o.value === uploadNoteSecondaryUrl
 );
 const initialSpeakers = content.speakers.length > 0 ? content.speakers : [{ title: "", href: "", image: "" }];
-const initialPartners = content.partners.length > 0 ? content.partners : [{ name: "", image: "" }];
-const initialGallery = content.gallery.length > 0 ? content.gallery : [{ caption: "", image: "" }];
+const initialPartners = content.partners;
+const initialGalleryPageJson = JSON.stringify(content.galleryPage);
+const initialAnnouncementPageJson = JSON.stringify(content.announcementPage);
 
 function toDateInputValue(value: string): string {
   if (!value) return "";
@@ -257,6 +258,36 @@ const initialContactPhoneRows = (content.contact.phones || [])
       }
 
       .fields { display: grid; gap: 1.25rem; }
+
+      .admin-check-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .admin-check-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.45;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      .admin-check-row input[type="checkbox"] {
+        width: 1.05rem;
+        height: 1.05rem;
+        min-width: 1.05rem;
+        margin: 0.2rem 0 0;
+        padding: 0;
+        flex-shrink: 0;
+        cursor: pointer;
+        accent-color: var(--brand);
+      }
+
       .admin-subheading { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--brand); font-weight: 700; }
       .grid { display: grid; }
       label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--ink); }
@@ -313,7 +344,9 @@ const initialContactPhoneRows = (content.contact.phones || [])
         margin-bottom: 1.5rem;
       }
 
-      .speaker-item {
+      .speaker-item,
+      .partner-item,
+      .gallery-photo-item {
         background: #f8fafc;
         border: 1px solid var(--line);
         border-radius: 16px;
@@ -474,6 +507,88 @@ const initialContactPhoneRows = (content.contact.phones || [])
         color: #6b7280;
         margin: 0;
       }
+      .editorial-item__image-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: flex-start;
+      }
+      .editorial-item__image-row .editorial-image-preview {
+        width: 160px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        background: #fff;
+      }
+      .editorial-item__image-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 200px;
+      }
+
+      #gallery-sections-list { display: flex; flex-direction: column; gap: 1rem; }
+      .gallery-section-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 1.1rem 1.1rem 1.25rem;
+      }
+      .gallery-section-item__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .gallery-section-item__title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #c04800;
+        margin: 0;
+      }
+      .gallery-section-item__field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .gallery-section-item__field label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #1e293b;
+      }
+      .gallery-section-item__field input {
+        padding: 0.7rem 0.95rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .gallery-section-item__photos {
+        display: grid;
+        gap: 1rem;
+      }
+      .gallery-section-item__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .gallery-section-item__bulk-hint {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin: 0;
+        flex: 1 1 100%;
+      }
 
       /* Footer program link rows */
       #footer-program-list {
@@ -549,12 +664,13 @@ const initialContactPhoneRows = (content.contact.phones || [])
           <a href="#section-speakers" class="sidebar-link">Speakers</a>
           <a href="#section-partners" class="sidebar-link">Partners</a>
           <a href="#section-gallery" class="sidebar-link">Gallery</a>
+          <a href="#section-announcement" class="sidebar-link">Pengumuman</a>
           <a href="#section-password" class="sidebar-link">Password</a>
         </nav>
       </aside>
 
       <main class="main">
-        <form id="admin-form">
+        <form id="admin-form" novalidate>
           <section class="card" id="section-meta">
             <h2>Site Configuration</h2>
             <div class="fields">
@@ -725,7 +841,7 @@ const initialContactPhoneRows = (content.contact.phones || [])
               <div class="form-group" style="border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; margin-bottom: 0.5rem;">
                 <h3 class="admin-subheading">Halaman Panduan (/panduan)</h3>
                 <p class="meta-note" style="margin-bottom: 1rem;">
-                  Judul &amp; intro di atas, lalu blok redaksi (bisa banyak). Tiap blok punya judul (H2), isi paragraf (pisahkan paragraf dengan baris kosong), dan daftar bullet opsional (satu baris = satu poin).
+                  Judul &amp; intro di atas, lalu alur submit, template, dan biaya. Blok redaksi (bisa banyak) tampil di bawah dengan judul &quot;Informasi &amp; ketentuan&quot;. <strong>Hasil seleksi / ID lulus / paralel / poster</strong> kelola di menu sidebar <strong>Pengumuman</strong>, bukan di sini.
                 </p>
                 <label>Judul halaman <input name="guidePageTitle" value={content.guide.pageTitle} required /></label>
                 <label style="margin-top: 0.75rem;">Intro halaman
@@ -851,24 +967,68 @@ const initialContactPhoneRows = (content.contact.phones || [])
             <h2>Speakers</h2>
             <p class="meta-note" style="margin-bottom: 1.5rem;">Upload image (JPG/PNG/WEBP, max 2MB), manage the speakers list. Images will be auto-fitted.</p>
             <div class="photo-grid" id="speakers-list"></div>
-            <button class="btn btn-secondary" id="add-speaker-btn" type="button">+ Add Speaker</button>
+            <button class="btn btn-secondary" type="button" data-action="add-speaker">+ Add Speaker</button>
           </section>
 
           <section class="card" id="section-partners">
             <h2>Partners</h2>
+            <p class="meta-note" style="margin-bottom: 1rem;">
+              Boleh <strong>kosong</strong> (hapus semua baris) atau banyak partner. Yang disimpan hanya baris yang punya <strong>nama + logo</strong>.
+            </p>
             <div class="photo-grid" id="partners-list"></div>
-            <button class="btn btn-secondary" id="add-partner-btn" type="button">+ Add Partner</button>
+            <p id="partners-empty-hint" class="meta-note" style="margin: 0.75rem 0 0; display: none;">Belum ada partner. Klik + Add Partner untuk menambah.</p>
+            <button class="btn btn-secondary" type="button" data-action="add-partner" style="margin-top: 0.75rem;">+ Add Partner</button>
           </section>
 
           <section class="card" id="section-gallery">
             <details class="admin-accordion" open>
-              <summary class="admin-accordion__summary">Gallery Images <span class="admin-accordion__chev">▼</span></summary>
-              <p class="meta-note">Upload image max 2MB</p>
-              <div style="padding-top: 1.5rem;">
-                <div class="photo-grid" id="gallery-list"></div>
-                <button class="btn btn-secondary" id="add-gallery-btn" type="button">+ Add Photo</button>
+              <summary class="admin-accordion__summary">Galeri (multi-section) <span class="admin-accordion__chev">▼</span></summary>
+              <p class="meta-note" style="margin-top: 0.75rem;">
+                Tiap section menjadi tab di halaman /galeri (mis. Galeri Seminar, <strong>Poster Peserta</strong> dengan id <code>poster-peserta</code>). Unggah per foto atau <strong>bulk</strong> (banyak file sekaligus) per section. Maks. 5MB per gambar. Poster peserta juga bisa ditautkan dari halaman Pengumuman.
+              </p>
+              <div style="padding-top: 1rem;">
+                <label>Judul halaman galeri
+                  <input name="galleryPageTitle" value={content.galleryPage.title} required />
+                </label>
+                <div id="gallery-sections-list" style="margin-top: 1rem; display: grid; gap: 1rem;"></div>
+                <button
+                  class="btn btn-secondary"
+                  id="add-gallery-section-btn"
+                  type="button"
+                  data-action="add-gallery-section"
+                  style="margin-top: 0.75rem;"
+                >+ Tambah section galeri</button>
               </div>
             </details>
+          </section>
+
+          <section class="card" id="section-announcement">
+            <h2>Pengumuman</h2>
+            <p class="meta-note" style="margin-bottom: 1rem;">
+              Halaman <code>/pengumuman</code> — menu &amp; banner beranda muncul hanya jika <strong>Aktifkan halaman</strong> dicentang dan minimal satu tab berisi konten.
+              <strong>Sebelum publish:</strong> cadangkan <code>src/data/content.local.json</code> dan file di Supabase storage.
+            </p>
+            <div class="fields">
+              <div class="admin-check-list">
+                <label class="admin-check-row">
+                  <input type="checkbox" name="announcementEnabled" checked={content.announcementPage.enabled} />
+                  <span>Aktifkan halaman pengumuman (tampil di menu jika ada konten)</span>
+                </label>
+                <label class="admin-check-row">
+                  <input type="checkbox" name="announcementShowHomeBanner" checked={content.announcementPage.showHomeBanner} />
+                  <span>Tampilkan strip pengumuman di beranda (dekat Register)</span>
+                </label>
+              </div>
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <label>Label menu <input name="announcementNavLabel" value={content.announcementPage.navLabel} required /></label>
+                <label>Teks tombol strip beranda <input name="announcementHomeBannerButtonLabel" value={content.announcementPage.homeBannerButtonLabel} required /></label>
+              </div>
+              <label>Teks strip beranda <textarea name="announcementHomeBannerText" rows="2" required>{content.announcementPage.homeBannerText}</textarea></label>
+              <label>Judul halaman <input name="announcementTitle" value={content.announcementPage.title} required /></label>
+              <label>Intro halaman <textarea name="announcementIntro" rows="3" required>{content.announcementPage.intro}</textarea></label>
+              <div id="announcement-sections-list" style="margin-top: 1rem; display: grid; gap: 1rem;"></div>
+              <button class="btn btn-secondary" type="button" data-action="add-announcement-section" style="margin-top: 0.75rem;">+ Tambah tab pengumuman</button>
+            </div>
           </section>
 
           <section class="card" id="section-password">
@@ -895,7 +1055,8 @@ const initialContactPhoneRows = (content.contact.phones || [])
       define:vars={{
         initialSpeakers,
         initialPartners,
-        initialGallery,
+        initialGalleryPageJson,
+        initialAnnouncementPageJson,
         initialHeroBg,
         initialHeroLogo,
         initialAboutImage,
@@ -911,11 +1072,9 @@ const initialContactPhoneRows = (content.contact.phones || [])
       const saveBtn = document.getElementById("save-btn");
       const saveProgress = document.getElementById("save-progress");
       const speakersList = document.getElementById("speakers-list");
-      const addSpeakerBtn = document.getElementById("add-speaker-btn");
       const partnersList = document.getElementById("partners-list");
-      const addPartnerBtn = document.getElementById("add-partner-btn");
-      const galleryList = document.getElementById("gallery-list");
-      const addGalleryBtn = document.getElementById("add-gallery-btn");
+      const gallerySectionsList = document.getElementById("gallery-sections-list");
+      const announcementSectionsList = document.getElementById("announcement-sections-list");
       const heroBgUrlInput = document.getElementById("hero-bg-url");
       const heroBgFileInput = document.getElementById("hero-bg-file");
       const heroBgPreview = document.getElementById("hero-bg-preview");
@@ -963,7 +1122,6 @@ const initialContactPhoneRows = (content.contact.phones || [])
       const eventDatePreviewInput = document.getElementById("event-date-preview");
       const speakerSeeds = Array.isArray(initialSpeakers) ? initialSpeakers : [];
       const partnerSeeds = Array.isArray(initialPartners) ? initialPartners : [];
-      const gallerySeeds = Array.isArray(initialGallery) ? initialGallery : [];
       const editorialSeeds = Array.isArray(initialGuideEditorial) ? initialGuideEditorial : [];
       const footerProgramSeeds = Array.isArray(initialFooterPrograms) ? initialFooterPrograms : [];
       let toastTimer = null;
@@ -1113,8 +1271,8 @@ const initialContactPhoneRows = (content.contact.phones || [])
           <img class="speaker-preview" width="200" height="150" style="object-fit:contain;display:block;" src="${normalizePreviewUrl(speaker.image || "/patterns/empty.svg")}" alt="Preview speaker" onerror="this.onerror=null;this.src='/patterns/empty.svg';" />
           <div class="speaker-actions">
             <input type="file" accept="image/png,image/jpeg,image/webp" />
-            <button class="btn-secondary" type="button" data-action="upload">Upload Foto</button>
-            <button class="btn-secondary" type="button" data-action="remove">Hapus</button>
+            <button class="btn-secondary" type="button" data-action="upload-speaker-photo">Upload Foto</button>
+            <button class="btn-secondary" type="button" data-action="remove-speaker">Hapus</button>
           </div>
         `;
         speakersList.appendChild(item);
@@ -1136,27 +1294,251 @@ const initialContactPhoneRows = (content.contact.phones || [])
           .filter((speaker) => speaker.title);
       }
 
+      function updatePartnersEmptyHint() {
+        const hint = document.getElementById("partners-empty-hint");
+        if (!hint || !partnersList) return;
+        const count = partnersList.querySelectorAll(".partner-item").length;
+        hint.style.display = count === 0 ? "block" : "none";
+      }
+
       function createPartnerItem(partner = { name: "", image: "" }) {
-        if (!partnersList) return;
+        if (!partnersList) return null;
         const item = document.createElement("article");
-        item.className = "speaker-item";
+        item.className = "partner-item";
         item.innerHTML = `
           <h3>Partner</h3>
-          <label>Nama Partner <input data-key="name" value="${(partner.name ?? "").replace(/"/g, "&quot;")}" required /></label>
+          <label>Nama Partner <input data-key="name" value="${(partner.name ?? "").replace(/"/g, "&quot;")}" placeholder="Nama partner" /></label>
           <input data-key="image" type="hidden" value="${(partner.image ?? "").replace(/"/g, "&quot;")}" />
           <img class="speaker-preview" width="200" height="150" style="object-fit:contain;display:block;" src="${normalizePreviewUrl(partner.image || "/patterns/empty.svg")}" alt="Preview partner" onerror="this.onerror=null;this.src='/patterns/empty.svg';" />
           <div class="speaker-actions">
-            <input type="file" accept="image/png,image/jpeg,image/webp" />
-            <button class="btn-secondary" type="button" data-action="upload">Upload Logo</button>
-            <button class="btn-secondary" type="button" data-action="remove">Hapus</button>
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+            <button class="btn btn-secondary" type="button" data-action="upload-partner-logo">Upload Logo</button>
+            <button class="btn btn-secondary" type="button" data-action="remove-partner">Hapus</button>
           </div>
         `;
         partnersList.appendChild(item);
+        updatePartnersEmptyHint();
+        return item;
+      }
+
+      function pruneEmptyPartnerRows() {
+        if (!partnersList) return;
+        partnersList.querySelectorAll(".partner-item").forEach((item) => {
+          const name = item.querySelector('[data-key="name"]')?.value?.trim() ?? "";
+          const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+          if (!name && !image) item.remove();
+        });
+        updatePartnersEmptyHint();
+      }
+
+      function validatePartnersBeforeSave() {
+        if (!partnersList) return true;
+        const rows = [...partnersList.querySelectorAll(".partner-item")];
+        for (let i = 0; i < rows.length; i += 1) {
+          const item = rows[i];
+          const name = item.querySelector('[data-key="name"]')?.value?.trim() ?? "";
+          const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+          if (!name && !image) continue;
+          if (name && !image) {
+            showToast(`Partner #${i + 1}: upload logo dulu, atau hapus baris ini.`, "err");
+            item.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            document.getElementById("section-partners")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return false;
+          }
+          if (!name && image) {
+            showToast(`Partner #${i + 1}: isi nama partner.`, "err");
+            item.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            return false;
+          }
+        }
+        return true;
+      }
+
+      function initPartnersAdmin() {
+        const root = document.getElementById("section-partners");
+        if (!root || root.dataset.partnersAdminInit === "1") return;
+        root.dataset.partnersAdminInit = "1";
+
+        root.addEventListener("click", async (event) => {
+          const el = event.target;
+          if (!(el instanceof Element)) return;
+          const actionEl = el.closest("[data-action]");
+          if (!actionEl || !root.contains(actionEl)) return;
+          const action = actionEl.getAttribute("data-action");
+          if (
+            action !== "add-partner" &&
+            action !== "remove-partner" &&
+            action !== "upload-partner-logo"
+          ) {
+            return;
+          }
+
+          if (actionEl instanceof HTMLButtonElement) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+
+          if (action === "add-partner") {
+            const item = createPartnerItem();
+            item?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            showToast("Baris partner ditambahkan.", "ok");
+            return;
+          }
+
+          const item = actionEl.closest(".partner-item");
+          if (!item) return;
+
+          if (action === "remove-partner") {
+            item.remove();
+            updatePartnersEmptyHint();
+            showToast("Partner dihapus.", "ok");
+            return;
+          }
+
+          if (action === "upload-partner-logo") {
+            const fileInput = item.querySelector('input[type="file"]');
+            if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+              fileInput?.click();
+              showToast("Pilih file logo dulu.", "err");
+              return;
+            }
+            if (!(actionEl instanceof HTMLButtonElement)) return;
+            actionEl.disabled = true;
+            const prevLabel = actionEl.textContent;
+            actionEl.textContent = "Uploading...";
+            try {
+              const formData = new FormData();
+              formData.append("image", fileInput.files[0]);
+              formData.append("uploadType", "partner");
+              const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
+              if (!response.ok) {
+                const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+                throw new Error(data.message ?? "Upload gagal.");
+              }
+              const data = await response.json();
+              const imageInput = item.querySelector('[data-key="image"]');
+              const preview = item.querySelector(".speaker-preview");
+              if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
+              setPreviewSource(preview, data.url);
+              fileInput.value = "";
+              setStatus("Logo partner berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+              showToast("Logo partner diunggah.", "ok");
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Upload gagal.";
+              setStatus(message, "err");
+              showToast(message, "err");
+            } finally {
+              actionEl.disabled = false;
+              actionEl.textContent = prevLabel || "Upload Logo";
+            }
+          }
+        });
+
+        root.addEventListener("change", (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+          if (!root.contains(target) || !target.files?.length) return;
+          const item = target.closest(".partner-item");
+          if (!item) return;
+          const preview = item.querySelector(".speaker-preview");
+          setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+        });
+      }
+
+      function initSpeakersAdmin() {
+        const root = document.getElementById("section-speakers");
+        if (!root || root.dataset.speakersAdminInit === "1") return;
+        root.dataset.speakersAdminInit = "1";
+
+        root.addEventListener("click", async (event) => {
+          const el = event.target;
+          if (!(el instanceof Element)) return;
+          const actionEl = el.closest("[data-action]");
+          if (!actionEl || !root.contains(actionEl)) return;
+          const action = actionEl.getAttribute("data-action");
+          if (
+            action !== "add-speaker" &&
+            action !== "remove-speaker" &&
+            action !== "upload-speaker-photo"
+          ) {
+            return;
+          }
+
+          if (actionEl instanceof HTMLButtonElement) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+
+          if (action === "add-speaker") {
+            createSpeakerItem();
+            const last = speakersList?.querySelector(".speaker-item:last-child");
+            last?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            showToast("Speaker ditambahkan.", "ok");
+            return;
+          }
+
+          const item = actionEl.closest(".speaker-item");
+          if (!item) return;
+
+          if (action === "remove-speaker") {
+            item.remove();
+            showToast("Speaker dihapus.", "ok");
+            return;
+          }
+
+          if (action === "upload-speaker-photo") {
+            const fileInput = item.querySelector('input[type="file"]');
+            if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+              fileInput?.click();
+              showToast("Pilih file gambar dulu.", "err");
+              return;
+            }
+            if (!(actionEl instanceof HTMLButtonElement)) return;
+            actionEl.disabled = true;
+            const prevLabel = actionEl.textContent;
+            actionEl.textContent = "Uploading...";
+            try {
+              const formData = new FormData();
+              formData.append("image", fileInput.files[0]);
+              formData.append("uploadType", "speaker");
+              const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
+              if (!response.ok) {
+                const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+                throw new Error(data.message ?? "Upload gagal.");
+              }
+              const data = await response.json();
+              const imageInput = item.querySelector('[data-key="image"]');
+              const preview = item.querySelector(".speaker-preview");
+              if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
+              setPreviewSource(preview, data.url);
+              fileInput.value = "";
+              setStatus("Foto speaker berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+              showToast("Foto speaker berhasil diunggah.", "ok");
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Upload gagal.";
+              setStatus(message, "err");
+              showToast(message, "err");
+            } finally {
+              actionEl.disabled = false;
+              actionEl.textContent = prevLabel || "Upload Foto";
+            }
+          }
+        });
+
+        root.addEventListener("change", (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+          if (!root.contains(target) || !target.files?.length) return;
+          const item = target.closest(".speaker-item");
+          if (!item) return;
+          const preview = item.querySelector(".speaker-preview");
+          setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+        });
       }
 
       function readPartners() {
         if (!partnersList) return [];
-        return [...partnersList.querySelectorAll(".speaker-item")]
+        return [...partnersList.querySelectorAll(".partner-item")]
           .map((item) => {
             const name = item.querySelector('[data-key="name"]')?.value?.trim() ?? "";
             const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
@@ -1168,36 +1550,562 @@ const initialContactPhoneRows = (content.contact.phones || [])
           .filter((partner) => partner.name && partner.image);
       }
 
-      function createGalleryItem(entry = { caption: "", image: "" }) {
-        if (!galleryList) return;
+      function slugifyGalleryIdClient(input) {
+        return String(input || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 48);
+      }
+
+      async function uploadGalleryImageFile(file) {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("uploadType", "gallery");
+        const response = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+          throw new Error(data.message ?? "Upload gagal.");
+        }
+        const data = await response.json();
+        if (!data.url) throw new Error("URL upload tidak diterima.");
+        return data.url;
+      }
+
+      async function bulkUploadGalleryToSection(sectionEl, fileList) {
+        const photosList = sectionEl?.querySelector("[data-gallery-photos]");
+        if (!photosList || !fileList?.length) return { ok: 0, fail: 0 };
+
+        const files = [...fileList].filter((f) => f.type.startsWith("image/"));
+        if (files.length === 0) {
+          showToast("Tidak ada file gambar yang valid.", "err");
+          return { ok: 0, fail: 0 };
+        }
+
+        let ok = 0;
+        let fail = 0;
+        showToast(`Mengunggah 0/${files.length} foto...`, "loading", 120000);
+
+        for (let i = 0; i < files.length; i += 1) {
+          showToast(`Mengunggah ${i + 1}/${files.length} foto...`, "loading", 120000);
+          try {
+            const url = await uploadGalleryImageFile(files[i]);
+            createGalleryPhotoItem(photosList, { caption: "", image: url });
+            ok += 1;
+          } catch (err) {
+            fail += 1;
+            console.error(err);
+          }
+        }
+
+        if (fail === 0) {
+          setStatus(`${ok} foto berhasil diunggah. Klik Simpan Perubahan.`, "ok");
+          showToast(`${ok} foto berhasil diunggah ke section ini.`, "ok");
+        } else {
+          setStatus(`${ok} berhasil, ${fail} gagal. Periksa ukuran/tipe file.`, "err");
+          showToast(`${ok} berhasil, ${fail} gagal.`, "err");
+        }
+        return { ok, fail };
+      }
+
+      function createGalleryPhotoItem(photosList, entry = { caption: "", image: "" }) {
+        if (!photosList) return;
         const item = document.createElement("article");
-        item.className = "speaker-item gallery-item";
+        item.className = "gallery-photo-item";
         item.innerHTML = `
-          <h3>Foto Galeri</h3>
+          <h3>Foto</h3>
           <label>Keterangan (opsional) <input data-key="caption" value="${(entry.caption ?? "").replace(/"/g, "&quot;")}" /></label>
           <input data-key="image" type="hidden" value="${(entry.image ?? "").replace(/"/g, "&quot;")}" />
           <img class="speaker-preview" width="200" height="150" style="object-fit:contain;display:block;" src="${normalizePreviewUrl(entry.image || "/patterns/empty.svg")}" alt="Preview galeri" onerror="this.onerror=null;this.src='/patterns/empty.svg';" />
           <div class="speaker-actions">
-            <input type="file" accept="image/png,image/jpeg,image/webp" />
-            <button class="btn-secondary" type="button" data-action="upload">Upload Foto</button>
-            <button class="btn-secondary" type="button" data-action="remove">Hapus</button>
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+            <button class="btn-secondary" type="button" data-action="upload-gallery-photo">Upload Foto</button>
+            <button class="btn-secondary" type="button" data-action="remove-gallery-photo">Hapus</button>
           </div>
         `;
-        galleryList.appendChild(item);
+        photosList.appendChild(item);
       }
 
-      function readGallery() {
-        if (!galleryList) return [];
-        return [...galleryList.querySelectorAll(".gallery-item")]
+      function renumberGallerySections() {
+        if (!gallerySectionsList) return;
+        gallerySectionsList.querySelectorAll(".gallery-section-item").forEach((node, index) => {
+          const title = node.querySelector(".gallery-section-item__title");
+          if (title) title.textContent = `Section galeri #${index + 1}`;
+        });
+      }
+
+      function createGallerySection(section = { id: "", label: "", items: [] }) {
+        if (!gallerySectionsList) return null;
+        const item = document.createElement("article");
+        item.className = "gallery-section-item";
+        item.innerHTML = [
+          '<header class="gallery-section-item__header">',
+          '  <h4 class="gallery-section-item__title">Section galeri</h4>',
+          '  <button class="btn btn-secondary" type="button" data-action="remove-gallery-section" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">Hapus section</button>',
+          "</header>",
+          '<div class="gallery-section-item__field">',
+          '  <label>Nama tab (mis. Galeri Seminar)',
+          '    <input data-key="label" type="text" required placeholder="Galeri Seminar" />',
+          "  </label>",
+          "</div>",
+          '<div class="gallery-section-item__field">',
+          '  <label>ID URL (opsional, untuk /galeri#id)',
+          '    <input data-key="id" type="text" placeholder="seminar — kosongkan untuk auto" />',
+          "  </label>",
+          "</div>",
+          '<div class="gallery-section-item__photos" data-gallery-photos></div>',
+          '<div class="gallery-section-item__actions">',
+          '  <button class="btn btn-secondary" type="button" data-action="add-gallery-photo">+ Tambah foto</button>',
+          '  <button class="btn btn-secondary" type="button" data-action="pick-bulk-gallery">Unggah banyak foto</button>',
+          '  <input type="file" class="gallery-bulk-input" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden />',
+          '  <p class="gallery-section-item__bulk-hint">Bulk: pilih beberapa gambar sekaligus — tiap file jadi satu foto di section ini.</p>',
+          "</div>",
+        ].join("\n");
+        const labelInput = item.querySelector('[data-key="label"]');
+        const idInput = item.querySelector('[data-key="id"]');
+        if (labelInput instanceof HTMLInputElement) labelInput.value = section.label ?? "";
+        if (idInput instanceof HTMLInputElement) idInput.value = section.id ?? "";
+        const photosList = item.querySelector("[data-gallery-photos]");
+        const items = Array.isArray(section.items) ? section.items : [];
+        if (items.length > 0) {
+          for (const photo of items) createGalleryPhotoItem(photosList, photo);
+        }
+        gallerySectionsList.appendChild(item);
+        renumberGallerySections();
+        return item;
+      }
+
+      function addGallerySectionFromUi() {
+        const item = createGallerySection({ id: "", label: "", items: [] });
+        if (!item) {
+          showToast("Daftar section galeri tidak ditemukan. Muat ulang halaman admin.", "err");
+          return null;
+        }
+        const labelInput = item.querySelector('[data-key="label"]');
+        if (labelInput instanceof HTMLInputElement) labelInput.focus();
+        item.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        showToast("Section galeri baru ditambahkan.", "ok");
+        return item;
+      }
+
+      function getGalleryPageSeeds() {
+        const fallback = [{ id: "seminar", label: "Galeri Seminar", items: [] }];
+        try {
+          const parsed = JSON.parse(initialGalleryPageJson);
+          if (parsed && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+            return parsed.sections;
+          }
+        } catch (err) {
+          console.error("[gallery-admin] Gagal parse data galeri:", err);
+        }
+        return fallback;
+      }
+
+      function initGalleryPageAdmin() {
+        const root = document.getElementById("section-gallery");
+        const list = document.getElementById("gallery-sections-list");
+        if (!root || !list) {
+          console.warn("[gallery-admin] Elemen galeri tidak ditemukan di DOM.");
+          return;
+        }
+
+        if (!list.querySelector(".gallery-section-item")) {
+          for (const sec of getGalleryPageSeeds()) {
+            try {
+              createGallerySection(sec ?? { id: "", label: "", items: [] });
+            } catch (err) {
+              console.error("[gallery-admin] Gagal membuat section:", err);
+            }
+          }
+        }
+
+        if (root.dataset.galleryAdminInit === "1") return;
+        root.dataset.galleryAdminInit = "1";
+
+        root.addEventListener("click", async (event) => {
+          const el = event.target;
+          if (!(el instanceof Element)) return;
+          const actionEl = el.closest("[data-action]");
+          if (!actionEl || !root.contains(actionEl)) return;
+          const action = actionEl.getAttribute("data-action");
+          const galleryActions = new Set([
+            "add-gallery-section",
+            "add-gallery-photo",
+            "pick-bulk-gallery",
+            "remove-gallery-section",
+            "remove-gallery-photo",
+            "upload-gallery-photo",
+          ]);
+          if (!action || !galleryActions.has(action)) return;
+
+          if (actionEl instanceof HTMLButtonElement) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+
+          if (action === "add-gallery-section") {
+            addGallerySectionFromUi();
+            return;
+          }
+
+          if (action === "add-gallery-photo") {
+            const sectionEl = actionEl.closest(".gallery-section-item");
+            const photosList = sectionEl?.querySelector("[data-gallery-photos]");
+            createGalleryPhotoItem(photosList, { caption: "", image: "" });
+            showToast("Slot foto ditambahkan.", "ok");
+            return;
+          }
+
+          if (action === "pick-bulk-gallery") {
+            const sectionEl = actionEl.closest(".gallery-section-item");
+            const bulkInput = sectionEl?.querySelector(".gallery-bulk-input");
+            if (bulkInput instanceof HTMLInputElement) bulkInput.click();
+            return;
+          }
+
+          if (action === "remove-gallery-section") {
+            actionEl.closest(".gallery-section-item")?.remove();
+            renumberGallerySections();
+            showToast("Section galeri dihapus.", "ok");
+            return;
+          }
+
+          if (action === "remove-gallery-photo") {
+            actionEl.closest(".gallery-photo-item")?.remove();
+            return;
+          }
+
+          if (action === "upload-gallery-photo") {
+            const photoItem = actionEl.closest(".gallery-photo-item");
+            if (!photoItem) return;
+            const fileInput = photoItem.querySelector('input[type="file"]:not(.gallery-bulk-input)');
+            if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+              fileInput?.click();
+              showToast("Pilih file gambar dulu.", "err");
+              return;
+            }
+            if (!(actionEl instanceof HTMLButtonElement)) return;
+            actionEl.disabled = true;
+            const prevLabel = actionEl.textContent;
+            actionEl.textContent = "Uploading...";
+            try {
+              const url = await uploadGalleryImageFile(fileInput.files[0]);
+              const imageInput = photoItem.querySelector('[data-key="image"]');
+              const preview = photoItem.querySelector(".speaker-preview");
+              if (imageInput instanceof HTMLInputElement) imageInput.value = url;
+              setPreviewSource(preview, url);
+              fileInput.value = "";
+              setStatus("Foto galeri berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+              showToast("Foto berhasil diunggah.", "ok");
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Upload gagal.";
+              setStatus(message, "err");
+              showToast(message, "err");
+            } finally {
+              actionEl.disabled = false;
+              actionEl.textContent = prevLabel || "Upload Foto";
+            }
+          }
+        });
+
+        root.addEventListener("change", async (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+          if (!root.contains(target) || !target.files?.length) return;
+
+          if (target.classList.contains("gallery-bulk-input")) {
+            const sectionEl = target.closest(".gallery-section-item");
+            if (!sectionEl) return;
+            const bulkBtn = sectionEl.querySelector('[data-action="pick-bulk-gallery"]');
+            if (bulkBtn instanceof HTMLButtonElement) bulkBtn.disabled = true;
+            await bulkUploadGalleryToSection(sectionEl, target.files);
+            target.value = "";
+            if (bulkBtn instanceof HTMLButtonElement) bulkBtn.disabled = false;
+            return;
+          }
+
+          const photoItem = target.closest(".gallery-photo-item");
+          if (!photoItem) return;
+          const preview = photoItem.querySelector(".speaker-preview");
+          setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+        });
+      }
+
+      function readGalleryPage() {
+        const title =
+          form?.elements?.namedItem?.("galleryPageTitle") instanceof HTMLInputElement
+            ? form.elements.namedItem("galleryPageTitle").value.trim()
+            : "Galeri";
+        if (!gallerySectionsList) return { title, sections: [] };
+
+        const sections = [...gallerySectionsList.querySelectorAll(".gallery-section-item")]
+          .map((sectionEl) => {
+            const label = sectionEl.querySelector('[data-key="label"]')?.value?.trim() ?? "";
+            const idRaw = sectionEl.querySelector('[data-key="id"]')?.value?.trim() ?? "";
+            const id = slugifyGalleryIdClient(idRaw || label) || "section";
+            const items = [...sectionEl.querySelectorAll(".gallery-photo-item")]
+              .map((photoEl) => {
+                const caption = photoEl.querySelector('[data-key="caption"]')?.value?.trim() ?? "";
+                const image = photoEl.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+                return {
+                  ...(caption ? { caption } : {}),
+                  ...(image ? { image } : {}),
+                };
+              })
+              .filter((entry) => entry.image);
+            return { id, label, items };
+          })
+          .filter((sec) => sec.label.length > 0);
+
+        const used = new Set();
+        const deduped = sections.map((sec) => {
+          let id = sec.id;
+          let n = 2;
+          while (used.has(id)) {
+            id = `${sec.id}-${n}`;
+            n += 1;
+          }
+          used.add(id);
+          return { ...sec, id };
+        });
+
+        return { title, sections: deduped };
+      }
+
+      function getAnnouncementPageSeeds() {
+        const fallback = { sections: [] };
+        try {
+          const parsed = JSON.parse(initialAnnouncementPageJson);
+          if (parsed && Array.isArray(parsed.sections)) return parsed;
+        } catch (err) {
+          console.error("[announcement-admin] Gagal parse data:", err);
+        }
+        return fallback;
+      }
+
+      function renumberAnnouncementSections() {
+        if (!announcementSectionsList) return;
+        announcementSectionsList.querySelectorAll(".announcement-section-item").forEach((node, index) => {
+          const title = node.querySelector(".announcement-section-item__title");
+          if (title) title.textContent = `Tab pengumuman #${index + 1}`;
+        });
+      }
+
+      function createAnnouncementSectionItem(
+        section = { id: "", label: "", body: "", bullets: [], links: [], sheetEmbedUrl: "", gallerySectionId: "" }
+      ) {
+        if (!announcementSectionsList) return;
+        const item = document.createElement("article");
+        item.className = "announcement-section-item";
+        const linksText = Array.isArray(section.links)
+          ? section.links.map((l) => `${l.label}|${l.href}`).join("\n")
+          : "";
+        const bulletsText = Array.isArray(section.bullets) ? section.bullets.join("\n") : "";
+        item.innerHTML = [
+          '<header class="editorial-item__header">',
+          '  <h4 class="announcement-section-item__title editorial-item__title">Tab pengumuman</h4>',
+          '  <button class="btn btn-secondary" type="button" data-action="remove-announcement-section" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">Hapus tab</button>',
+          "</header>",
+          '<div class="grid" style="grid-template-columns: 1fr 1fr; gap: 0.75rem;">',
+          '  <label>Label tab <input data-key="label" type="text" required placeholder="Misal: ID Lulus" /></label>',
+          '  <label>ID tab (hash URL) <input data-key="id" type="text" placeholder="lulus" /></label>',
+          "</div>",
+          '<div class="editorial-item__field">',
+          "  <label>Paragraf</label>",
+          '  <textarea data-key="body" rows="5"></textarea>',
+          "  <p class=\"editorial-item__hint\">Pisahkan paragraf dengan baris kosong. URL https://... otomatis jadi link.</p>",
+          "</div>",
+          '<div class="editorial-item__field">',
+          "  <label>Daftar poin (opsional)</label>",
+          '  <textarea data-key="bullets" rows="4" placeholder="Satu baris = satu poin"></textarea>',
+          "</div>",
+          '<div class="editorial-item__field">',
+          "  <label>Tautan eksternal (opsional)</label>",
+          '  <textarea data-key="links" rows="3" placeholder="Satu baris: Label|https://..."></textarea>',
+          "</div>",
+          '<div class="editorial-item__field">',
+          "  <label>Embed Google Sheet (opsional)</label>",
+          '  <textarea data-key="sheetEmbedUrl" rows="3" placeholder="URL publish/embed Google Sheet"></textarea>',
+          "</div>",
+          '<div class="editorial-item__field">',
+          "  <label>ID section galeri poster (opsional)</label>",
+          '  <input data-key="gallerySectionId" type="text" placeholder="poster-peserta" />',
+          "  <p class=\"editorial-item__hint\">Tombol ke /galeri#[id]. Upload poster di menu Gallery.</p>",
+          "</div>",
+        ].join("\n");
+        const setVal = (key, val) => {
+          const el = item.querySelector(`[data-key="${key}"]`);
+          if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.value = val ?? "";
+        };
+        setVal("label", section.label);
+        setVal("id", section.id);
+        setVal("body", section.body);
+        setVal("bullets", bulletsText);
+        setVal("links", linksText);
+        setVal("sheetEmbedUrl", section.sheetEmbedUrl);
+        setVal("gallerySectionId", section.gallerySectionId);
+        announcementSectionsList.appendChild(item);
+        renumberAnnouncementSections();
+      }
+
+      function readAnnouncementPage() {
+        const enabled =
+          form?.elements?.namedItem("announcementEnabled") instanceof HTMLInputElement &&
+          form.elements.namedItem("announcementEnabled").checked;
+        const showHomeBanner =
+          form?.elements?.namedItem("announcementShowHomeBanner") instanceof HTMLInputElement &&
+          form.elements.namedItem("announcementShowHomeBanner").checked;
+        const navLabel =
+          form?.elements?.namedItem("announcementNavLabel") instanceof HTMLInputElement
+            ? form.elements.namedItem("announcementNavLabel").value.trim()
+            : "Pengumuman";
+        const homeBannerText =
+          form?.elements?.namedItem("announcementHomeBannerText") instanceof HTMLTextAreaElement
+            ? form.elements.namedItem("announcementHomeBannerText").value.trim()
+            : "";
+        const homeBannerButtonLabel =
+          form?.elements?.namedItem("announcementHomeBannerButtonLabel") instanceof HTMLInputElement
+            ? form.elements.namedItem("announcementHomeBannerButtonLabel").value.trim()
+            : "Lihat pengumuman";
+        const title =
+          form?.elements?.namedItem("announcementTitle") instanceof HTMLInputElement
+            ? form.elements.namedItem("announcementTitle").value.trim()
+            : "Pengumuman";
+        const intro =
+          form?.elements?.namedItem("announcementIntro") instanceof HTMLTextAreaElement
+            ? form.elements.namedItem("announcementIntro").value.trim()
+            : "";
+
+        if (!announcementSectionsList) {
+          return {
+            enabled,
+            showHomeBanner,
+            homeBannerText,
+            homeBannerButtonLabel,
+            navLabel,
+            title,
+            intro,
+            sections: [],
+          };
+        }
+
+        const sections = [...announcementSectionsList.querySelectorAll(".announcement-section-item")]
           .map((item) => {
-            const caption = item.querySelector('[data-key="caption"]')?.value?.trim() ?? "";
-            const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+            const label = item.querySelector('[data-key="label"]')?.value?.trim() ?? "";
+            const idRaw = item.querySelector('[data-key="id"]')?.value?.trim() ?? "";
+            const body = item.querySelector('[data-key="body"]')?.value?.trim() ?? "";
+            const bullets = (item.querySelector('[data-key="bullets"]')?.value ?? "")
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean);
+            const links = (item.querySelector('[data-key="links"]')?.value ?? "")
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) => {
+                const pipe = line.indexOf("|");
+                if (pipe === -1) return null;
+                const linkLabel = line.slice(0, pipe).trim();
+                const href = line.slice(pipe + 1).trim();
+                if (!linkLabel || !href) return null;
+                return { label: linkLabel, href };
+              })
+              .filter(Boolean);
+            const sheetEmbedUrl = item.querySelector('[data-key="sheetEmbedUrl"]')?.value?.trim() ?? "";
+            const gallerySectionId = item.querySelector('[data-key="gallerySectionId"]')?.value?.trim() ?? "";
+            const id = slugifyGalleryIdClient(idRaw || label) || "section";
             return {
-              ...(caption ? { caption } : {}),
-              ...(image ? { image } : {}),
+              id,
+              label,
+              body,
+              bullets,
+              links,
+              ...(sheetEmbedUrl ? { sheetEmbedUrl } : {}),
+              ...(gallerySectionId ? { gallerySectionId } : {}),
             };
           })
-          .filter((entry) => entry.image);
+          .filter((sec) => sec.label.length > 0);
+
+        const used = new Set();
+        const deduped = sections.map((sec) => {
+          let id = sec.id;
+          let n = 2;
+          while (used.has(id)) {
+            id = `${sec.id}-${n}`;
+            n += 1;
+          }
+          used.add(id);
+          return { ...sec, id };
+        });
+
+        return {
+          enabled,
+          showHomeBanner,
+          homeBannerText,
+          homeBannerButtonLabel,
+          navLabel,
+          title,
+          intro,
+          sections: deduped,
+        };
+      }
+
+      function announcementSectionHasContent(sec) {
+        return Boolean(
+          sec.body?.trim() ||
+            (sec.bullets && sec.bullets.length > 0) ||
+            sec.sheetEmbedUrl?.trim() ||
+            (sec.links && sec.links.length > 0) ||
+            sec.gallerySectionId?.trim()
+        );
+      }
+
+      function validateAnnouncementBeforeSave(page) {
+        if (!page.enabled) return true;
+        const hasContent = page.sections.some(announcementSectionHasContent);
+        if (!hasContent) {
+          showToast("Pengumuman aktif: isi minimal satu tab (teks, sheet, link, atau id galeri).", "err");
+          document.getElementById("section-announcement")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          return false;
+        }
+        return true;
+      }
+
+      function initAnnouncementAdmin() {
+        const root = document.getElementById("section-announcement");
+        if (!root || root.dataset.announcementAdminInit === "1") return;
+        root.dataset.announcementAdminInit = "1";
+
+        root.addEventListener("click", (event) => {
+          const el = event.target;
+          if (!(el instanceof Element)) return;
+          const actionEl = el.closest("[data-action]");
+          if (!actionEl || !root.contains(actionEl)) return;
+          const action = actionEl.getAttribute("data-action");
+          if (action !== "add-announcement-section" && action !== "remove-announcement-section") return;
+
+          if (actionEl instanceof HTMLButtonElement) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+
+          if (action === "add-announcement-section") {
+            createAnnouncementSectionItem();
+            showToast("Tab pengumuman ditambahkan.", "ok");
+            return;
+          }
+
+          if (action === "remove-announcement-section") {
+            actionEl.closest(".announcement-section-item")?.remove();
+            renumberAnnouncementSections();
+            showToast("Tab pengumuman dihapus.", "ok");
+          }
+        });
       }
 
       function renumberEditorialItems() {
@@ -1209,7 +2117,17 @@ const initialContactPhoneRows = (content.contact.phones || [])
         });
       }
 
-      function createGuideEditorialItem(section = { heading: "", body: "", bullets: [] }) {
+      function createGuideEditorialItem(
+        section = {
+          heading: "",
+          body: "",
+          bullets: [],
+          image: "",
+          imageAlt: "",
+          sheetEmbedUrl: "",
+          formEmbedUrl: "",
+        }
+      ) {
         if (!guideEditorialList) return;
         const item = document.createElement("article");
         item.className = "editorial-item";
@@ -1225,21 +2143,56 @@ const initialContactPhoneRows = (content.contact.phones || [])
           '<div class="editorial-item__field">',
           '  <label>Isi (paragraf)</label>',
           '  <textarea data-key="body" rows="8" required></textarea>',
-          '  <p class="editorial-item__hint">Pisahkan paragraf dengan satu baris kosong (Enter dua kali).</p>',
+          '  <p class="editorial-item__hint">Pisahkan paragraf dengan satu baris kosong (Enter dua kali). URL https://... otomatis jadi link di halaman Panduan.</p>',
           '</div>',
           '<div class="editorial-item__field">',
           '  <label>Daftar poin (opsional)</label>',
           '  <textarea data-key="bullets" rows="5" placeholder="Satu baris = satu poin. Kosongkan jika tidak perlu."></textarea>',
-          '  <p class="editorial-item__hint">Kalau diisi, akan ditampilkan sebagai bullet list di halaman Panduan.</p>',
+          '  <p class="editorial-item__hint">Satu baris = satu poin. URL https://... juga otomatis jadi link di halaman Panduan.</p>',
+          '</div>',
+          '<div class="editorial-item__field">',
+          '  <label>Gambar ilustrasi (opsional)</label>',
+          '  <input data-key="image" type="hidden" />',
+          '  <div class="editorial-item__image-row">',
+          '    <img class="editorial-image-preview speaker-preview" src="/patterns/empty.svg" alt="Preview gambar redaksi" />',
+          '    <div class="editorial-item__image-actions">',
+          '      <label>Alt text gambar (opsional) <input data-key="imageAlt" type="text" placeholder="Deskripsi singkat gambar" /></label>',
+          '      <input type="file" accept="image/*" />',
+          '      <button class="btn btn-secondary" type="button" data-action="upload-editorial-image">Upload Gambar</button>',
+          '    </div>',
+          '  </div>',
+          '  <p class="editorial-item__hint">Opsional. Setelah upload klik Simpan Perubahan. Tanpa gambar, teks tampil full width.</p>',
+          '</div>',
+          '<div class="editorial-item__field">',
+          '  <label>Embed Google Sheet (opsional)</label>',
+          '  <textarea data-key="sheetEmbedUrl" rows="3" placeholder="Tempel URL publish/embed atau kode iframe Google Sheet"></textarea>',
+          '  <p class="editorial-item__hint">Sheet harus dipublish dari Google. Tampil di bawah teks, di atas Form.</p>',
+          '</div>',
+          '<div class="editorial-item__field">',
+          '  <label>Embed Google Form (opsional)</label>',
+          '  <textarea data-key="formEmbedUrl" rows="3" placeholder="Tempel URL embed atau kode iframe Google Form"></textarea>',
+          '  <p class="editorial-item__hint">Gunakan link embed dari menu Sematkan di Google Form.</p>',
           '</div>',
         ].join("\n");
         const headingInput = item.querySelector('[data-key="heading"]');
         const bodyTa = item.querySelector('[data-key="body"]');
         const bulletsTa = item.querySelector('[data-key="bullets"]');
+        const imageInput = item.querySelector('[data-key="image"]');
+        const imageAltInput = item.querySelector('[data-key="imageAlt"]');
+        const sheetTa = item.querySelector('[data-key="sheetEmbedUrl"]');
+        const formTa = item.querySelector('[data-key="formEmbedUrl"]');
+        const preview = item.querySelector(".editorial-image-preview");
         if (headingInput instanceof HTMLInputElement) headingInput.value = section.heading ?? "";
         if (bodyTa instanceof HTMLTextAreaElement) bodyTa.value = section.body ?? "";
         if (bulletsTa instanceof HTMLTextAreaElement) {
           bulletsTa.value = Array.isArray(section.bullets) ? section.bullets.join("\n") : "";
+        }
+        if (imageInput instanceof HTMLInputElement) imageInput.value = section.image ?? "";
+        if (imageAltInput instanceof HTMLInputElement) imageAltInput.value = section.imageAlt ?? "";
+        if (sheetTa instanceof HTMLTextAreaElement) sheetTa.value = section.sheetEmbedUrl ?? "";
+        if (formTa instanceof HTMLTextAreaElement) formTa.value = section.formEmbedUrl ?? "";
+        if (preview instanceof HTMLImageElement) {
+          setPreviewSource(preview, section.image ?? "");
         }
         guideEditorialList.appendChild(item);
         renumberEditorialItems();
@@ -1255,7 +2208,19 @@ const initialContactPhoneRows = (content.contact.phones || [])
               .split("\n")
               .map((line) => line.trim())
               .filter(Boolean);
-            return { heading, body, bullets };
+            const image = item.querySelector('[data-key="image"]')?.value?.trim() ?? "";
+            const imageAlt = item.querySelector('[data-key="imageAlt"]')?.value?.trim() ?? "";
+            const sheetEmbedUrl = item.querySelector('[data-key="sheetEmbedUrl"]')?.value?.trim() ?? "";
+            const formEmbedUrl = item.querySelector('[data-key="formEmbedUrl"]')?.value?.trim() ?? "";
+            return {
+              heading,
+              body,
+              bullets,
+              ...(image ? { image } : {}),
+              ...(imageAlt ? { imageAlt } : {}),
+              ...(sheetEmbedUrl ? { sheetEmbedUrl } : {}),
+              ...(formEmbedUrl ? { formEmbedUrl } : {}),
+            };
           })
           .filter((s) => s.heading && (s.body.length > 0 || s.bullets.length > 0));
       }
@@ -1291,34 +2256,117 @@ const initialContactPhoneRows = (content.contact.phones || [])
         setPreviewSource(footerBannerPreview, url);
       }
 
+      initGalleryPageAdmin();
+      initPartnersAdmin();
+      initSpeakersAdmin();
+      initAnnouncementAdmin();
+
       for (const speaker of speakerSeeds) createSpeakerItem(speaker);
       for (const partner of partnerSeeds) createPartnerItem(partner);
-      for (const entry of gallerySeeds) createGalleryItem(entry);
+      updatePartnersEmptyHint();
+      for (const sec of getAnnouncementPageSeeds().sections ?? []) {
+        createAnnouncementSectionItem(sec);
+      }
       for (const sec of editorialSeeds) createGuideEditorialItem(sec);
       for (const program of footerProgramSeeds) createFooterProgramRow(program);
+
+      guideEditorialList?.addEventListener("click", async (event) => {
+        const el = event.target;
+        if (!(el instanceof Element)) return;
+        const actionEl = el.closest("[data-action]");
+        if (!actionEl || !guideEditorialList.contains(actionEl)) return;
+        const action = actionEl.getAttribute("data-action");
+
+        if (action === "remove-editorial") {
+          const item = actionEl.closest(".editorial-item");
+          if (!item || item.classList.contains("announcement-section-item")) return;
+          item.remove();
+          renumberEditorialItems();
+          return;
+        }
+
+        if (action === "upload-editorial-image") {
+          const item = actionEl.closest(".editorial-item");
+          if (!item || item.classList.contains("announcement-section-item")) return;
+          const fileInput = item.querySelector('input[type="file"]');
+          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
+            fileInput?.click();
+            setStatus("Pilih file gambar dulu, lalu klik Upload Gambar lagi.", "err");
+            showToast("Pilih file gambar dulu sebelum upload.", "err");
+            return;
+          }
+          if (!(actionEl instanceof HTMLButtonElement)) return;
+
+          const formData = new FormData();
+          formData.append("image", fileInput.files[0]);
+          formData.append("uploadType", "guideEditorialImage");
+
+          actionEl.disabled = true;
+          const prevLabel = actionEl.textContent;
+          actionEl.textContent = "Uploading...";
+          const response = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          });
+          actionEl.disabled = false;
+          actionEl.textContent = prevLabel || "Upload Gambar";
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
+            setStatus(data.message ?? "Upload gagal.", "err");
+            showToast(data.message ?? "Upload gagal.", "err");
+            return;
+          }
+
+          const data = await response.json();
+          const imageInput = item.querySelector('[data-key="image"]');
+          const preview = item.querySelector(".editorial-image-preview");
+          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
+          setPreviewSource(preview, data.url);
+          if (fileInput instanceof HTMLInputElement) fileInput.value = "";
+          setStatus("Gambar redaksi berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
+          showToast("Gambar redaksi berhasil diunggah.", "ok");
+        }
+      });
+
+      guideEditorialList?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
+        if (!target.files?.length) return;
+        const item = target.closest(".editorial-item");
+        if (!item || item.classList.contains("announcement-section-item")) return;
+        const preview = item.querySelector(".editorial-image-preview");
+        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
+      });
 
       guideEditorialList?.addEventListener("click", (event) => {
         const target = event.target;
         if (!(target instanceof HTMLElement)) return;
-        if (target.getAttribute("data-action") === "remove-editorial") {
-          target.closest(".editorial-item")?.remove();
-          renumberEditorialItems();
-        }
+        if (!target.classList.contains("editorial-image-preview")) return;
+        const item = target.closest(".editorial-item");
+        if (!item || item.classList.contains("announcement-section-item")) return;
+        const fileInput = item?.querySelector('input[type="file"]');
+        if (fileInput instanceof HTMLInputElement) fileInput.click();
       });
 
       footerProgramList?.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        if (target.getAttribute("data-action") === "remove-footer-program") {
-          target.closest(".footer-program-row")?.remove();
-        }
+        const el = event.target;
+        if (!(el instanceof Element)) return;
+        const actionEl = el.closest('[data-action="remove-footer-program"]');
+        if (!actionEl || !footerProgramList.contains(actionEl)) return;
+        actionEl.closest(".footer-program-row")?.remove();
       });
 
-      addSpeakerBtn?.addEventListener("click", () => createSpeakerItem());
-      addPartnerBtn?.addEventListener("click", () => createPartnerItem());
-      addGalleryBtn?.addEventListener("click", () => createGalleryItem());
       addGuideEditorialBtn?.addEventListener("click", () =>
-        createGuideEditorialItem({ heading: "", body: "", bullets: [] })
+        createGuideEditorialItem({
+          heading: "",
+          body: "",
+          bullets: [],
+          image: "",
+          imageAlt: "",
+          sheetEmbedUrl: "",
+          formEmbedUrl: "",
+        })
       );
       addFooterProgramBtn?.addEventListener("click", () => createFooterProgramRow({ label: "", href: "" }));
 
@@ -1623,192 +2671,6 @@ const initialContactPhoneRows = (content.contact.phones || [])
         showToast("Template artikel berhasil diunggah dan siap digunakan.", "ok");
       });
 
-      speakersList?.addEventListener("click", async (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        const action = target.getAttribute("data-action");
-        if (!action) return;
-
-        const item = target.closest(".speaker-item");
-        if (!item) return;
-
-        if (action === "remove") {
-          item.remove();
-          return;
-        }
-
-        if (action === "upload") {
-          const fileInput = item.querySelector('input[type="file"]');
-          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
-            setStatus("Pilih file gambar dulu sebelum upload.", "err");
-            showToast("Pilih file gambar dulu sebelum upload.", "err");
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append("image", fileInput.files[0]);
-          formData.append("uploadType", "speaker");
-
-          target.setAttribute("disabled", "true");
-          target.textContent = "Uploading...";
-          const response = await fetch("/api/admin/upload", {
-            method: "POST",
-            body: formData,
-          });
-          target.removeAttribute("disabled");
-          target.textContent = "Upload Foto";
-
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
-            setStatus(data.message ?? "Upload gagal.", "err");
-            showToast(data.message ?? "Upload gagal.", "err");
-            return;
-          }
-
-          const data = await response.json();
-          const imageInput = item.querySelector('[data-key="image"]');
-          const preview = item.querySelector(".speaker-preview");
-          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
-          setPreviewSource(preview, data.url);
-          setStatus("Foto speaker berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
-          showToast("Foto speaker berhasil diunggah dan ditampilkan.", "ok");
-        }
-      });
-
-      speakersList?.addEventListener("change", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
-        if (!target.files?.length) return;
-        const item = target.closest(".speaker-item");
-        if (!item) return;
-        const preview = item.querySelector(".speaker-preview");
-        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
-      });
-
-      partnersList?.addEventListener("click", async (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        const action = target.getAttribute("data-action");
-        if (!action) return;
-
-        const item = target.closest(".speaker-item");
-        if (!item) return;
-
-        if (action === "remove") {
-          item.remove();
-          return;
-        }
-
-        if (action === "upload") {
-          const fileInput = item.querySelector('input[type="file"]');
-          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
-            setStatus("Pilih file logo dulu sebelum upload.", "err");
-            showToast("Pilih file logo dulu sebelum upload.", "err");
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append("image", fileInput.files[0]);
-          formData.append("uploadType", "partner");
-
-          target.setAttribute("disabled", "true");
-          target.textContent = "Uploading...";
-          const response = await fetch("/api/admin/upload", {
-            method: "POST",
-            body: formData,
-          });
-          target.removeAttribute("disabled");
-          target.textContent = "Upload Logo";
-
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
-            setStatus(data.message ?? "Upload gagal.", "err");
-            showToast(data.message ?? "Upload gagal.", "err");
-            return;
-          }
-
-          const data = await response.json();
-          const imageInput = item.querySelector('[data-key="image"]');
-          const preview = item.querySelector(".speaker-preview");
-          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
-          setPreviewSource(preview, data.url);
-          setStatus("Logo partner berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
-          showToast("Logo partner berhasil diunggah dan ditampilkan.", "ok");
-        }
-      });
-
-      partnersList?.addEventListener("change", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
-        if (!target.files?.length) return;
-        const item = target.closest(".speaker-item");
-        if (!item) return;
-        const preview = item.querySelector(".speaker-preview");
-        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
-      });
-
-      galleryList?.addEventListener("click", async (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        const action = target.getAttribute("data-action");
-        if (!action) return;
-
-        const item = target.closest(".gallery-item");
-        if (!item) return;
-
-        if (action === "remove") {
-          item.remove();
-          return;
-        }
-
-        if (action === "upload") {
-          const fileInput = item.querySelector('input[type="file"]');
-          if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) {
-            setStatus("Pilih foto galeri dulu sebelum upload.", "err");
-            showToast("Pilih foto galeri dulu sebelum upload.", "err");
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append("image", fileInput.files[0]);
-          formData.append("uploadType", "gallery");
-
-          target.setAttribute("disabled", "true");
-          target.textContent = "Uploading...";
-          const response = await fetch("/api/admin/upload", {
-            method: "POST",
-            body: formData,
-          });
-          target.removeAttribute("disabled");
-          target.textContent = "Upload Foto";
-
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({ message: "Upload gagal." }));
-            setStatus(data.message ?? "Upload gagal.", "err");
-            showToast(data.message ?? "Upload gagal.", "err");
-            return;
-          }
-
-          const data = await response.json();
-          const imageInput = item.querySelector('[data-key="image"]');
-          const preview = item.querySelector(".speaker-preview");
-          if (imageInput instanceof HTMLInputElement) imageInput.value = data.url;
-          setPreviewSource(preview, data.url);
-          setStatus("Foto galeri berhasil diupload. Jangan lupa klik Simpan Perubahan.", "ok");
-          showToast("Foto galeri berhasil diunggah dan ditampilkan.", "ok");
-        }
-      });
-
-      galleryList?.addEventListener("change", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLInputElement) || target.type !== "file") return;
-        if (!target.files?.length) return;
-        const item = target.closest(".gallery-item");
-        if (!item) return;
-        const preview = item.querySelector(".speaker-preview");
-        setPreviewSource(preview, URL.createObjectURL(target.files[0]));
-      });
-
       form?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!(form instanceof HTMLFormElement)) return;
@@ -1851,13 +2713,30 @@ const initialContactPhoneRows = (content.contact.phones || [])
           }))
           .filter((item) => item.name && item.tel && item.display);
 
+        pruneEmptyPartnerRows();
+        if (!validatePartnersBeforeSave()) {
+          setSavingUi(false);
+          return;
+        }
+
         const speakers = readSpeakers();
         const partners = readPartners();
-        const gallery = readGallery();
+        const galleryPage = readGalleryPage();
+        if (galleryPage.sections.length === 0) {
+          setSavingUi(false);
+          showToast("Minimal satu section galeri dengan nama tab.", "err");
+          return;
+        }
         const guideEditorialSections = readGuideEditorialSections();
         if (guideEditorialSections.length === 0) {
           setSavingUi(false);
           showToast("Minimal satu bagian redaksi untuk halaman Panduan.", "err");
+          return;
+        }
+
+        const announcementPage = readAnnouncementPage();
+        if (!validateAnnouncementBeforeSave(announcementPage)) {
+          setSavingUi(false);
           return;
         }
 
@@ -1928,7 +2807,8 @@ const initialContactPhoneRows = (content.contact.phones || [])
           timelineImage: form.timelineImage.value,
           speakers,
           partners,
-          gallery,
+          galleryPage,
+          announcementPage,
         };
 
         setStatus("Menyimpan...", "");
@@ -2002,6 +2882,20 @@ const initialContactPhoneRows = (content.contact.phones || [])
         await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
         window.location.href = "/admin/login";
       });
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+          initGalleryPageAdmin();
+          initPartnersAdmin();
+          initSpeakersAdmin();
+          initAnnouncementAdmin();
+        });
+      } else {
+        initGalleryPageAdmin();
+        initPartnersAdmin();
+        initSpeakersAdmin();
+        initAnnouncementAdmin();
+      }
     </script>
   </body>
 </html>

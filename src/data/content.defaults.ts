@@ -139,5 +139,45 @@ export const defaultSiteContent: SiteContent = {
     { title: "Prof. Dr. Ir. Khairil Anwar Notodiputro, M.S.", image: "" },
   ],
   partners: [],
-  gallery: [],
+  galleryPage: {
+    title: "Galeri",
+    sections: [
+      { id: "seminar", label: "Galeri Seminar", items: [] },
+      { id: "poster-peserta", label: "Poster Peserta", items: [] },
+    ],
+  },
+  announcementPage: {
+    enabled: false,
+    showHomeBanner: false,
+    homeBannerText: "Pengumuman terbaru sudah tersedia.",
+    homeBannerButtonLabel: "Lihat pengumuman",
+    navLabel: "Pengumuman",
+    title: "Pengumuman",
+    intro:
+      "Halaman ini berisi pengumuman resmi acara, termasuk daftar lulus, informasi sesi paralel, dan tautan ke galeri poster.",
+    sections: [
+      {
+        id: "lulus",
+        label: "ID Lulus",
+        body: "",
+        bullets: [],
+        links: [],
+      },
+      {
+        id: "paralel",
+        label: "Sesi Paralel",
+        body: "",
+        bullets: [],
+        links: [],
+      },
+      {
+        id: "poster",
+        label: "Poster Peserta",
+        body: "Poster peserta dapat dilihat di galeri pada tab Poster Peserta.",
+        bullets: [],
+        links: [],
+        gallerySectionId: "poster-peserta",
+      },
+    ],
+  },
 };

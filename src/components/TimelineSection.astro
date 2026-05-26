@@ -1,7 +1,10 @@
 ---
 import { getSiteData, images } from "../data/site";
+import { PENGUMUMAN_PATH } from "../lib/section-anchors";
 
-const { timeline, media } = await getSiteData();
+const { timeline, media, announcementPage } = await getSiteData();
+const showAnnouncementLink = announcementPage.showInNav;
+const announcementNavLabel = announcementPage.navLabel?.trim() || "Pengumuman";
 ---
 
 <section
@@ -23,6 +26,13 @@ const { timeline, media } = await getSiteData();
           ))
         }
       </ol>
+      {
+        showAnnouncementLink && (
+          <p class="timeline-announcement">
+            <a href={PENGUMUMAN_PATH}>Lihat {announcementNavLabel} →</a>
+          </p>
+        )
+      }
     </div>
     <div class="timeline__media reveal">
       <img

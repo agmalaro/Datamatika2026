@@ -6,6 +6,7 @@ import datamatikaNavLogo from "../assets/logos/datamatika-nav-logo.png";
 import speakerPlaceholder from "../assets/speakers/datamatika-speaker-placeholder.png";
 import footerIpbSsmiBanner from "../assets/footer/ipb-ssmi-horizontal-banner.png";
 import { getSiteContent } from "../lib/content-store";
+import { isAnnouncementNavVisible } from "../lib/announcement";
 
 const subtlePatternBg = "/patterns/empty.svg";
 
@@ -29,6 +30,7 @@ export const images = {
 export type TimelineItem = { date: string; label: string };
 export type Speaker = { src: string; title: string; href?: string };
 export type GalleryItem = { src: string; caption?: string };
+export type GallerySection = { id: string; label: string; items: GalleryItem[] };
 export type AgendaItem = { day: string; time: string; agenda: string; detail?: string };
 
 export async function getSiteData() {
@@ -46,10 +48,17 @@ export async function getSiteData() {
     title: speaker.title,
     href: speaker.href,
   }));
-  const gallery: GalleryItem[] = content.gallery.map((item) => ({
-    src: item.image || "",
-    caption: item.caption,
-  }));
+  const galleryPage = {
+    title: content.galleryPage.title?.trim() || "Galeri",
+    sections: content.galleryPage.sections.map((section) => ({
+      id: section.id,
+      label: section.label,
+      items: section.items.map((item) => ({
+        src: item.image || "",
+        ...(item.caption ? { caption: item.caption } : {}),
+      })),
+    })),
+  };
   const agenda: AgendaItem[] = (content.agenda?.items || []).map((item) => ({
     day: item.day,
     time: item.time,
@@ -59,6 +68,11 @@ export async function getSiteData() {
   const media = {
     aboutPhoto: content.about.image?.trim() || images.aboutPhoto,
     timelinePhoto: content.timelineImage?.trim() || images.timelinePhoto,
+  };
+
+  const announcementPage = {
+    ...content.announcementPage,
+    showInNav: isAnnouncementNavVisible(content.announcementPage),
   };
 
   return {
@@ -77,6 +91,7 @@ export async function getSiteData() {
     media,
     speakers,
     footerPartners,
-    gallery,
+    galleryPage,
+    announcementPage,
   };
 }

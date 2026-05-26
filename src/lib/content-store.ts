@@ -28,6 +28,147 @@ function sanitizeString(value: unknown, fallback: string): string {
   return trimmed.length > 0 ? trimmed : fallback;
 }
 
+function slugifyGalleryId(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function sanitizeGalleryItems(raw: unknown[]): { caption?: string; image: string }[] {
+  return raw
+    .filter(isRecord)
+    .map((item) => {
+      const caption = typeof item.caption === "string" ? item.caption.trim() : "";
+      const image = typeof item.image === "string" ? item.image.trim() : "";
+      return {
+        ...(caption ? { caption } : {}),
+        image,
+      };
+    })
+    .filter((item) => item.image)
+    .map((item) => ({
+      ...(item.caption ? { caption: item.caption } : {}),
+      image: item.image,
+    }));
+}
+
+function dedupeGallerySectionIds(
+  sections: { id: string; label: string; items: { caption?: string; image: string }[] }[]
+) {
+  const used = new Set<string>();
+  return sections.map((section) => {
+    let baseId = slugifyGalleryId(section.id || section.label) || "section";
+    let id = baseId;
+    let n = 2;
+    while (used.has(id)) {
+      id = `${baseId}-${n}`;
+      n += 1;
+    }
+    used.add(id);
+    return { ...section, id };
+  });
+}
+
+function sanitizeGalleryPage(value: Record<string, unknown>): typeof defaultSiteContent.galleryPage {
+  const legacyGallery = Array.isArray(value.gallery) ? value.gallery : [];
+  const galleryPageValue = isRecord(value.galleryPage) ? value.galleryPage : null;
+
+  let title = defaultSiteContent.galleryPage.title;
+  let sectionsRaw: unknown[] = [];
+
+  if (galleryPageValue) {
+    title = sanitizeString(galleryPageValue.title, defaultSiteContent.galleryPage.title);
+    sectionsRaw = Array.isArray(galleryPageValue.sections) ? galleryPageValue.sections : [];
+  } else if (legacyGallery.length > 0) {
+    sectionsRaw = [{ id: "seminar", label: "Galeri Seminar", items: legacyGallery }];
+  }
+
+  const sections = dedupeGallerySectionIds(
+    sectionsRaw
+      .filter(isRecord)
+      .map((sec) => {
+        const label = typeof sec.label === "string" ? sec.label.trim() : "";
+        const idRaw = typeof sec.id === "string" ? sec.id.trim() : "";
+        const items = Array.isArray(sec.items) ? sanitizeGalleryItems(sec.items) : [];
+        const id = slugifyGalleryId(idRaw || label) || "section";
+        return { id, label, items };
+      })
+      .filter((sec) => sec.label.length > 0)
+  );
+
+  if (sections.length === 0) {
+    return defaultSiteContent.galleryPage;
+  }
+
+  return { title, sections };
+}
+
+function sanitizeAnnouncementLinks(raw: unknown): { label: string; href: string }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(isRecord)
+    .map((item) => ({
+      label: typeof item.label === "string" ? item.label.trim() : "",
+      href: typeof item.href === "string" ? item.href.trim() : "",
+    }))
+    .filter((item) => item.label && item.href);
+}
+
+function sanitizeAnnouncementPage(value: Record<string, unknown>): typeof defaultSiteContent.announcementPage {
+  const ap = isRecord(value.announcementPage) ? value.announcementPage : {};
+  const sectionsRaw = Array.isArray(ap.sections) ? ap.sections : [];
+
+  const sections = dedupeGallerySectionIds(
+    sectionsRaw
+      .filter(isRecord)
+      .map((sec) => {
+        const label = typeof sec.label === "string" ? sec.label.trim() : "";
+        const idRaw = typeof sec.id === "string" ? sec.id.trim() : "";
+        const body = typeof sec.body === "string" ? sec.body.trim() : "";
+        const bullets = Array.isArray(sec.bullets)
+          ? sec.bullets.map((b) => (typeof b === "string" ? b.trim() : "")).filter(Boolean)
+          : [];
+        const sheetEmbedUrl = typeof sec.sheetEmbedUrl === "string" ? sec.sheetEmbedUrl.trim() : "";
+        const gallerySectionId =
+          typeof sec.gallerySectionId === "string" ? sec.gallerySectionId.trim() : "";
+        const links = sanitizeAnnouncementLinks(sec.links);
+        const id = slugifyGalleryId(idRaw || label) || "section";
+        return {
+          id,
+          label,
+          body,
+          bullets,
+          links,
+          ...(sheetEmbedUrl ? { sheetEmbedUrl } : {}),
+          ...(gallerySectionId ? { gallerySectionId } : {}),
+        };
+      })
+      .filter((sec) => sec.label.length > 0)
+  );
+
+  return {
+    enabled: ap.enabled === true,
+    showHomeBanner: ap.showHomeBanner === true,
+    homeBannerText: sanitizeString(
+      ap.homeBannerText,
+      defaultSiteContent.announcementPage.homeBannerText
+    ),
+    homeBannerButtonLabel: sanitizeString(
+      ap.homeBannerButtonLabel,
+      defaultSiteContent.announcementPage.homeBannerButtonLabel
+    ),
+    navLabel: sanitizeString(ap.navLabel, defaultSiteContent.announcementPage.navLabel),
+    title: sanitizeString(ap.title, defaultSiteContent.announcementPage.title),
+    intro: sanitizeString(ap.intro, defaultSiteContent.announcementPage.intro),
+    sections:
+      sections.length > 0 ? sections : defaultSiteContent.announcementPage.sections,
+  };
+}
+
 function sanitizeContent(value: unknown): SiteContent {
   if (!isRecord(value)) return defaultSiteContent;
 
@@ -58,7 +199,19 @@ function sanitizeContent(value: unknown): SiteContent {
       const bullets = Array.isArray(sec.bullets)
         ? sec.bullets.map((b) => (typeof b === "string" ? b.trim() : "")).filter(Boolean)
         : [];
-      return { heading, body, bullets };
+      const image = typeof sec.image === "string" ? sec.image.trim() : "";
+      const imageAlt = typeof sec.imageAlt === "string" ? sec.imageAlt.trim() : "";
+      const sheetEmbedUrl = typeof sec.sheetEmbedUrl === "string" ? sec.sheetEmbedUrl.trim() : "";
+      const formEmbedUrl = typeof sec.formEmbedUrl === "string" ? sec.formEmbedUrl.trim() : "";
+      return {
+        heading,
+        body,
+        bullets,
+        ...(image ? { image } : {}),
+        ...(imageAlt ? { imageAlt } : {}),
+        ...(sheetEmbedUrl ? { sheetEmbedUrl } : {}),
+        ...(formEmbedUrl ? { formEmbedUrl } : {}),
+      };
     })
     .filter((sec) => sec.heading && (sec.body.length > 0 || sec.bullets.length > 0));
   const agendaValue = isRecord(value.agenda) ? value.agenda : {};
@@ -66,7 +219,8 @@ function sanitizeContent(value: unknown): SiteContent {
   const timelineImageValue = typeof value.timelineImage === "string" ? value.timelineImage : "";
   const speakersValue = Array.isArray(value.speakers) ? value.speakers : [];
   const partnersValue = Array.isArray(value.partners) ? value.partners : [];
-  const galleryValue = Array.isArray(value.gallery) ? value.gallery : [];
+  const galleryPage = sanitizeGalleryPage(value);
+  const announcementPage = sanitizeAnnouncementPage(value);
 
   return {
     siteMeta: {
@@ -172,17 +326,8 @@ function sanitizeContent(value: unknown): SiteContent {
         name: item.name,
         image: item.image,
       })),
-    gallery: galleryValue
-      .filter(isRecord)
-      .map((item) => ({
-        caption: typeof item.caption === "string" ? item.caption.trim() : "",
-        image: typeof item.image === "string" ? item.image.trim() : "",
-      }))
-      .filter((item) => item.image)
-      .map((item) => ({
-        ...(item.caption ? { caption: item.caption } : {}),
-        image: item.image,
-      })),
+    galleryPage,
+    announcementPage,
     guide: {
       pageTitle: sanitizeString(guideValue.pageTitle, defaultSiteContent.guide.pageTitle),
       pageIntro:

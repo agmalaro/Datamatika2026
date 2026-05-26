@@ -1,0 +1,210 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import EditorialRichText from "../components/EditorialRichText.astro";
+import GuideGoogleEmbed from "../components/GuideGoogleEmbed.astro";
+import { getSiteData } from "../data/site";
+import { getFilledAnnouncementSections, isAnnouncementNavVisible } from "../lib/announcement";
+import { resolveGoogleEmbedUrl } from "../lib/google-embed";
+
+const { announcementPage } = await getSiteData();
+const pageTitle = announcementPage.title?.trim() || "Pengumuman";
+const pageIntro = announcementPage.intro?.trim() || "";
+const sections = getFilledAnnouncementSections(announcementPage);
+const isPublished = isAnnouncementNavVisible(announcementPage);
+const defaultSectionId = sections[0]?.id ?? "";
+
+function paragraphsFromBody(body: string): string[] {
+  return body
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+---
+
+<BaseLayout title={`${pageTitle} | DATAMATIKA 2026`}>
+  <SiteHeader />
+  <main id="main">
+    <section class="section section--gallery-page">
+      <div class="wrap pengumuman-page">
+        <h1 class="heading-accent heading-accent--lg">{pageTitle}</h1>
+        {pageIntro ? <p class="pengumuman-intro">{pageIntro}</p> : null}
+
+        {
+          isPublished && sections.length > 0 ? (
+            <>
+              <div
+                class="gallery-tabs"
+                role="tablist"
+                aria-label="Kategori pengumuman"
+                data-default-section={defaultSectionId}
+              >
+                {sections.map((section, index) => (
+                  <button
+                    type="button"
+                    class:list={["gallery-tab", index === 0 && "gallery-tab--active"]}
+                    role="tab"
+                    id={`pengumuman-tab-${section.id}`}
+                    aria-selected={index === 0 ? "true" : "false"}
+                    aria-controls={`pengumuman-panel-${section.id}`}
+                    data-section-id={section.id}
+                  >
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+
+              {sections.map((section, index) => {
+                const sheetSrc = resolveGoogleEmbedUrl(section.sheetEmbedUrl ?? "", "sheet");
+                const galleryId = section.gallerySectionId?.trim() ?? "";
+                return (
+                  <div
+                    id={`pengumuman-panel-${section.id}`}
+                    class="gallery-panel pengumuman-panel"
+                    role="tabpanel"
+                    aria-labelledby={`pengumuman-tab-${section.id}`}
+                    data-section-id={section.id}
+                    hidden={index !== 0 ? true : undefined}
+                  >
+                    <article class="panduan-card pengumuman-card">
+                      {paragraphsFromBody(section.body).map((para) => (
+                        <p class="panduan-rich-text">
+                          <EditorialRichText text={para} />
+                        </p>
+                      ))}
+                      {section.bullets && section.bullets.length > 0 ? (
+                        <ul class="panduan-rich-list">
+                          {section.bullets.map((item) => (
+                            <li class="panduan-rich-text">
+                              <EditorialRichText text={item} />
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      {section.links && section.links.length > 0 ? (
+                        <div class="pengumuman-links form-actions">
+                          {section.links.map((link) => (
+                            <a
+                              class="btn btn--ghost"
+                              href={link.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {link.label}
+                            </a>
+                          ))}
+                        </div>
+                      ) : null}
+                      {galleryId ? (
+                        <div class="form-actions" style="margin-top: 1rem;">
+                          <a
+                            class="btn btn--primary"
+                            href={`/galeri#${encodeURIComponent(galleryId)}`}
+                          >
+                            Lihat galeri poster
+                          </a>
+                        </div>
+                      ) : null}
+                      {sheetSrc ? (
+                        <div class="panduan-editorial-embeds">
+                          <GuideGoogleEmbed
+                            src={sheetSrc}
+                            title={`Google Sheet: ${section.label}`}
+                            kind="sheet"
+                          />
+                        </div>
+                      ) : null}
+                    </article>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            <p class="gallery-empty">Belum ada pengumuman yang dipublikasikan.</p>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
+
+<script>
+  function activatePengumumanSection(sectionId: string) {
+    const tabs = document.querySelectorAll<HTMLButtonElement>(".gallery-tab[data-section-id]");
+    const panels = document.querySelectorAll<HTMLElement>(".pengumuman-panel[data-section-id]");
+    let found = false;
+
+    tabs.forEach((tab) => {
+      const isActive = tab.dataset.sectionId === sectionId;
+      if (isActive) found = true;
+      tab.classList.toggle("gallery-tab--active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    panels.forEach((panel) => {
+      const isActive = panel.dataset.sectionId === sectionId;
+      if (isActive) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "");
+      }
+    });
+
+    return found;
+  }
+
+  function sectionIdFromHash(): string {
+    return decodeURIComponent(window.location.hash.replace(/^#/, "").trim());
+  }
+
+  function initPengumumanTabs() {
+    const tablist = document.querySelector<HTMLElement>(".gallery-tabs[data-default-section]");
+    if (!tablist) return;
+
+    const defaultId = tablist.dataset.defaultSection ?? "";
+    const hashId = sectionIdFromHash();
+    const initialId = hashId && activatePengumumanSection(hashId) ? hashId : defaultId;
+    if (initialId) activatePengumumanSection(initialId);
+
+    tablist.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const tab = target.closest<HTMLButtonElement>(".gallery-tab[data-section-id]");
+      if (!tab?.dataset.sectionId) return;
+      const id = tab.dataset.sectionId;
+      activatePengumumanSection(id);
+      history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+    });
+
+    window.addEventListener("hashchange", () => {
+      const id = sectionIdFromHash();
+      if (id) activatePengumumanSection(id);
+    });
+  }
+
+  initPengumumanTabs();
+  document.addEventListener("astro:page-load", initPengumumanTabs);
+</script>
+
+<style>
+  .pengumuman-page {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .pengumuman-intro {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .pengumuman-card {
+    margin-top: 0.25rem;
+  }
+
+  .pengumuman-links {
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+</style>

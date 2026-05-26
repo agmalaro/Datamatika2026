@@ -2,7 +2,10 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
+import EditorialRichText from "../components/EditorialRichText.astro";
+import GuideGoogleEmbed from "../components/GuideGoogleEmbed.astro";
 import { getSiteData, images } from "../data/site";
+import { resolveGoogleEmbedUrl } from "../lib/google-embed";
 
 const { siteMeta, uploadNote, guide } = await getSiteData();
 const submitUrl = uploadNote.primaryUrl?.trim() || siteMeta.registrationUrl;
@@ -29,24 +32,6 @@ function paragraphsFromBody(body: string): string[] {
       <div class="wrap panduan-page">
         <h1 class="heading-accent heading-accent--lg">{pageTitle}</h1>
         {pageIntro ? <p class="panduan-intro">{pageIntro}</p> : null}
-
-        {
-          editorialSections.map((sec) => (
-            <article class="panduan-card">
-              <h2>{sec.heading}</h2>
-              {paragraphsFromBody(sec.body).map((para) => (
-                <p>{para}</p>
-              ))}
-              {sec.bullets && sec.bullets.length > 0 ? (
-                <ul>
-                  {sec.bullets.map((item) => (
-                    <li>{item}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </article>
-          ))
-        }
 
         <article class="panduan-card panduan-grid">
           <div>
@@ -94,6 +79,62 @@ function paragraphsFromBody(body: string): string[] {
             )
           }
         </article>
+
+        {
+          editorialSections.length > 0 ? (
+            <div class="panduan-editorial-stack">
+              <h2 class="panduan-editorial-stack__title">Informasi &amp; ketentuan</h2>
+              {editorialSections.map((sec) => {
+                const imageUrl = sec.image?.trim() ?? "";
+                const sheetSrc = resolveGoogleEmbedUrl(sec.sheetEmbedUrl ?? "", "sheet");
+                const formSrc = resolveGoogleEmbedUrl(sec.formEmbedUrl ?? "", "form");
+                return (
+                  <article class="panduan-card">
+                    <h2>{sec.heading}</h2>
+                    <div class:list={["panduan-editorial-body", imageUrl && "panduan-editorial-body--with-image"]}>
+                      <div class="panduan-editorial-text">
+                        {paragraphsFromBody(sec.body).map((para) => (
+                          <p class="panduan-rich-text">
+                            <EditorialRichText text={para} />
+                          </p>
+                        ))}
+                        {sec.bullets && sec.bullets.length > 0 ? (
+                          <ul class="panduan-rich-list">
+                            {sec.bullets.map((item) => (
+                              <li class="panduan-rich-text">
+                                <EditorialRichText text={item} />
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                      {imageUrl ? (
+                        <figure class="panduan-editorial-media">
+                          <img
+                            src={imageUrl}
+                            alt={sec.imageAlt?.trim() || sec.heading}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </figure>
+                      ) : null}
+                    </div>
+                    {sheetSrc || formSrc ? (
+                      <div class="panduan-editorial-embeds">
+                        {sheetSrc ? (
+                          <GuideGoogleEmbed src={sheetSrc} title={`Google Sheet: ${sec.heading}`} kind="sheet" />
+                        ) : null}
+                        {formSrc ? (
+                          <GuideGoogleEmbed src={formSrc} title={`Google Form: ${sec.heading}`} kind="form" />
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : null
+        }
       </div>
     </section>
   </main>
@@ -111,7 +152,27 @@ function paragraphsFromBody(body: string): string[] {
     color: var(--muted);
   }
 
+  .panduan-editorial-stack {
+    display: grid;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .panduan-editorial-stack__title {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
   .panduan-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.84);
     border-radius: var(--radius-md);
@@ -124,11 +185,61 @@ function paragraphsFromBody(body: string): string[] {
     margin-bottom: 0.5rem;
   }
 
-  .panduan-card p:last-child {
+  .panduan-editorial-body {
+    display: block;
+  }
+
+  .panduan-editorial-body--with-image {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr minmax(200px, 360px);
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .panduan-editorial-body--with-image {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panduan-editorial-text p:last-child {
     margin-bottom: 0;
   }
 
-  .panduan-card ul,
+  .panduan-editorial-media {
+    margin: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    overflow: hidden;
+  }
+
+  .panduan-editorial-media img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--radius-sm);
+  }
+
+  .panduan-rich-text :global(a) {
+    color: rgb(var(--brand-rgb));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .panduan-rich-text :global(a:hover) {
+    opacity: 0.85;
+  }
+
+  .panduan-rich-list {
+    margin: 0.5rem 0 0 1.1rem;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .panduan-card ul:not(.panduan-rich-list),
   .panduan-card ol {
     margin: 0.5rem 0 0 1.1rem;
     padding: 0;
@@ -172,4 +283,3 @@ function paragraphsFromBody(body: string): string[] {
     background: rgba(var(--brand-rgb), 0.08);
   }
 </style>
-

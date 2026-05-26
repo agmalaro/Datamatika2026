@@ -1,0 +1,12 @@
+---
+import { linkifyPlainText } from "../lib/linkify";
+
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+const html = linkifyPlainText(text);
+---
+
+<Fragment set:html={html} />

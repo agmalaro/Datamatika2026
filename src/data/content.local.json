@@ -19,11 +19,11 @@
   },
   "timeline": [
     {
-      "date": "1â18 Mei 2026",
+      "date": "1-18 Mei 2026",
       "label": "Pendaftaran dan Submit Full Paper"
     },
     {
-      "date": "19â22 Mei 2026",
+      "date": "19-22 Mei 2026",
       "label": "Review Paper"
     },
     {
@@ -68,6 +68,34 @@
       }
     ],
     "email": "ssmi@apps.ipb.ac.id"
+  },
+  "footer": {
+    "kicker": "Program studi & bidang",
+    "programLinks": [
+      {
+        "label": "Statistika dan Sains Data",
+        "href": "https://stat.ipb.ac.id/"
+      },
+      {
+        "label": "Matematika",
+        "href": "https://math.ipb.ac.id/"
+      },
+      {
+        "label": "Ilmu Komputer",
+        "href": "https://cs.ipb.ac.id/"
+      },
+      {
+        "label": "Aktuaria",
+        "href": "https://aktuaria.ipb.ac.id/"
+      },
+      {
+        "label": "Kecerdasan Buatan",
+        "href": "https://ai.ipb.ac.id/"
+      }
+    ],
+    "bannerImage": "",
+    "bannerAlt": "IPB University Bogor Indonesia; Sekolah Sains Data, Matematika, dan Informatika",
+    "copyright": "© Copyright SSMI. IPB University, Bogor, Jawa Barat."
   },
   "timelineImage": "/uploads/speakers/timelineImage-1776879979611-5o2h15.jpg",
   "speakers": [
@@ -117,6 +145,31 @@
     }
   ],
   "guide": {
+    "pageTitle": "Panduan Submit Artikel Seminar",
+    "pageIntro": "Halaman ini berisi panduan penulisan dan pengumpulan artikel untuk Seminar Nasional DATAMATIKA 2026, termasuk checklist submit, alur pendaftaran, template artikel, dan informasi biaya pendaftaran.",
+    "editorialSections": [
+      {
+        "heading": "Panduan Penulis",
+        "body": "Penulis diundang untuk mengirimkan naskah ke prosiding ini. Setiap naskah akan ditinjau terlebih dahulu oleh editor untuk memastikan kesesuaian dengan fokus dan ruang lingkup seminar. Naskah yang dinilai sesuai akan dilanjutkan ke proses peer review sebelum diputuskan diterima atau ditolak.\n\nSebelum mengirim naskah, penulis bertanggung jawab memperoleh izin untuk mempublikasikan semua materi yang disertakan (misalnya foto, dokumen, atau dataset). Semua penulis yang dicantumkan wajib menyetujui pencantuman namanya sebagai penulis. Jika diperlukan, penelitian harus telah mendapatkan persetujuan dari komite etik yang berwenang sesuai ketentuan hukum negara tempat penelitian dilakukan.\n\nEditor dapat menolak naskah pada tahap awal (desk reject) jika tidak memenuhi standar mutu minimum. Pastikan rancangan studi dan argumen penelitian disusun serta dijelaskan dengan baik. Judul harus ringkas, dan abstrak harus mampu berdiri sendiri. Hal ini meningkatkan peluang naskah disetujui reviewer untuk ditelaah.",
+        "bullets": []
+      },
+      {
+        "heading": "Checklist Persiapan Submit",
+        "body": "Semua pengiriman naskah wajib memenuhi persyaratan berikut:",
+        "bullets": [
+          "Naskah telah memenuhi ketentuan dalam Panduan Penulis.",
+          "Naskah belum pernah dipublikasikan dan tidak sedang diajukan ke jurnal/prosiding lain.",
+          "Seluruh referensi telah diperiksa akurasi dan kelengkapannya.",
+          "Semua tabel dan gambar telah diberi nomor serta label yang jelas.",
+          "Izin publikasi untuk foto, dataset, atau materi pendukung lainnya telah diperoleh."
+        ]
+      },
+      {
+        "heading": "Pernyataan Privasi",
+        "body": "Nama dan alamat email yang dimasukkan pada situs ini hanya digunakan untuk kebutuhan Konferensi/Prosiding DATAMATIKA 2026 dan tidak akan digunakan untuk tujuan lain maupun dibagikan ke pihak lain.",
+        "bullets": []
+      }
+    ],
     "flowTitle": "Alur Pendaftaran & Submit",
     "flowSteps": [
       "Siapkan naskah sesuai template resmi DATAMATIKA 2026.",
@@ -125,9 +178,9 @@
       "Unggah naskah, lengkapi metadata penulis, lalu kirim.",
       "Tunggu proses review dan notifikasi hasil dari panitia/editor."
     ],
-    "flowImage": "",
+    "flowImage": "/uploads/guide/guideFlowImage-1778210454127-c66206.jpeg",
     "templateLabel": "Unduh Template Artikel (.docx)",
-    "templateUrl": "/files/template-artikel-1776914484054-vtvd4e.docx",
+    "templateUrl": "/files/guideTemplate-1778210431068-aa6b56.docx",
     "fee": {
       "type": "free",
       "freeText": "GRATIS dan tidak dipungut biaya. Ayo segera mendaftar yaa..",
